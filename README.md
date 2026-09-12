@@ -8,8 +8,9 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 0 completada.** El proyecto base funciona; todavía no consulta
-> ninguna API académica. La siguiente fase es la interfaz con datos mock.
+> **Estado: Fase 1 completada.** La interfaz funciona de extremo a extremo, pero
+> contra datos de ejemplo: todavía no consulta ninguna API académica. La
+> siguiente fase conecta Semantic Scholar.
 > El roadmap completo está en [`Plan.md`](./Plan.md).
 
 ## Features

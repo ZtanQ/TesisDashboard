@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fase 0 completada.** El proyecto Next.js está creado y corre; todavía no consulta ninguna API académica ni existe base de datos. La siguiente fase es la 1 (interfaz con datos mock); `app/page.tsx` sigue siendo el boilerplate de `create-next-app` y se sustituye ahí.
+**Fase 1 completada.** La interfaz está construida y funciona de extremo a extremo, pero contra datos de ejemplo: no hay ninguna API académica conectada ni base de datos. La siguiente es la Fase 2 (Semantic Scholar).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
+
+### La costura que abre la Fase 2
+
+`lib/paper-service.ts` es el único punto por el que la interfaz obtiene un artículo. Hoy devuelve mocks; conectar Semantic Scholar consiste en cambiar **solo el cuerpo** de `getPaperByDoi` para que delegue en `lib/academic/semantic-scholar.ts` y su normalizador. La firma (`Promise<PaperResult>`, una unión discriminada) no cambia, así que ninguna página ni componente se toca. Al terminar, borrar `lib/mock/` y el aviso de datos de ejemplo de `app/analyze/[id]/page.tsx`.
+
+Los DOI de ejemplo (`10.1000/paperlens.demo.*`) están en `lib/mock/papers.ts` e incluyen uno con campos ausentes y otro que fuerza el error de fuente caída, para poder revisar esos estados sin romper nada.
 
 ## Qué es PaperLens
 
@@ -22,6 +28,7 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS v4. Ba
 
 - Los Route Handlers **no se cachean por defecto**; el `GET` solo se cachea con `export const dynamic = 'force-static'`. Las consultas a APIs académicas deben quedarse sin cachear salvo decisión explícita.
 - `params` y `searchParams` de las páginas llegan como Promesas y hay que await-earlas (relevante para `/analyze/[id]`).
+- Con un `loading.tsx` presente, Next envía el esqueleto en streaming y la cabecera HTTP ya salió cuando se ejecuta `notFound()`: la pantalla de "no encontrado" se muestra bien pero con estado **200, no 404**. Es una decisión consciente — se prefiere el esqueleto, porque con la API real la espera será de segundos y nadie consume el código de estado en una app privada.
 
 ## Comandos
 
