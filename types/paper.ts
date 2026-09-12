@@ -2,11 +2,7 @@ import type { Author, Institution } from "./author";
 import type { PaperMetrics } from "./metrics";
 
 /** Fuentes academicas de las que puede provenir un dato. */
-export type DataSourceName =
-  | "semantic-scholar"
-  | "openalex"
-  | "crossref"
-  | "mock";
+export type DataSourceName = "semantic-scholar" | "openalex" | "crossref";
 
 export interface DataSource {
   name: DataSourceName;

@@ -43,7 +43,6 @@ export default async function AnalyzePage({
   }
 
   const { paper } = result;
-  const isMock = paper.source.some((source) => source.name === "mock");
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-3xl flex-1 px-6 py-12">
@@ -53,14 +52,6 @@ export default async function AnalyzePage({
       >
         ← Nuevo análisis
       </Link>
-
-      {isMock ? (
-        <p className="mt-6 rounded-lg border border-[#fab219] bg-[#fab219]/10 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-100">
-          <strong className="font-semibold">Datos de ejemplo.</strong> Este
-          artículo no es real y sus cifras están inventadas. PaperLens todavía
-          no consulta ninguna fuente académica.
-        </p>
-      ) : null}
 
       <div className="mt-8">
         <PaperHeader paper={paper} />

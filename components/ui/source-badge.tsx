@@ -4,7 +4,6 @@ const LABELS: Record<DataSourceName, string> = {
   "semantic-scholar": "Semantic Scholar",
   openalex: "OpenAlex",
   crossref: "Crossref",
-  mock: "Datos de ejemplo",
 };
 
 /**

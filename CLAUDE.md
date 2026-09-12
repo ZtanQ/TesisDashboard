@@ -4,15 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fase 1 completada.** La interfaz está construida y funciona de extremo a extremo, pero contra datos de ejemplo: no hay ninguna API académica conectada ni base de datos. La siguiente es la Fase 2 (Semantic Scholar).
+**Fases 0–2 completadas.** La aplicación consulta Semantic Scholar de verdad: se introduce un DOI y sale un dashboard con datos reales. No hay base de datos ni biblioteca todavía. La siguiente es la Fase 3 (formalizar la normalización) o la 4 (Supabase), según el plan.
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
-### La costura que abre la Fase 2
+### Qué no da Semantic Scholar (verificado contra la API)
 
-`lib/paper-service.ts` es el único punto por el que la interfaz obtiene un artículo. Hoy devuelve mocks; conectar Semantic Scholar consiste en cambiar **solo el cuerpo** de `getPaperByDoi` para que delegue en `lib/academic/semantic-scholar.ts` y su normalizador. La firma (`Promise<PaperResult>`, una unión discriminada) no cambia, así que ninguna página ni componente se toca. Al terminar, borrar `lib/mock/` y el aviso de datos de ejemplo de `app/analyze/[id]/page.tsx`.
+Importa porque define qué secciones del dashboard salen vacías hoy y qué debe aportar OpenAlex en la Fase 5:
 
-Los DOI de ejemplo (`10.1000/paperlens.demo.*`) están en `lib/mock/papers.ts` e incluyen uno con campos ausentes y otro que fuerza el error de fuente caída, para poder revisar esos estados sin romper nada.
+- **`authors[].affiliations` llega vacío prácticamente siempre.** Sin afiliaciones no hay instituciones ni países: esas tres secciones muestran "no disponible". No se infiere el país a partir del nombre de la institución — sería inventar.
+- **No publica cuartil, SJR ni factor de impacto.** `metrics` se queda sin definir; la tarjeta de cuartil dice "Ninguna fuente lo publica".
+- **`openAccessPdf.url` puede ser `""`** en vez de ausente. El normalizador trata la cadena vacía como campo ausente.
+- **`publicationTypes` se contradice** (devuelve `["Book","JournalArticle","Conference"]` para una misma ponencia). Se prefiere `publicationVenue.type`, que sí distingue journal de conference.
+- **Los nombres con caracteres no ASCII llegan mutilados** en algunos registros ("Jrgen Schmidhuber" por "Jürgen"). Es un defecto del dato de origen, no del cliente: se muestra tal cual, sin corregirlo a mano. Cotejar con OpenAlex es el arreglo real.
+- **Hay DOIs válidos que no están indexados** (p. ej. `10.1038/nature14539`): devuelven 404 y se muestran como "no encontrado".
+
+### Límite de tasa
+
+Sin `SEMANTIC_SCHOLAR_API_KEY` se usa el pool anónimo, que devuelve **429 con facilidad** (ocurre en uso normal, no solo bajo carga). Por eso tiene su propio código de error y su propio mensaje, en vez de mezclarse con "fuente caída". Las consultas se cachean una hora con `next: { revalidate: 3600 }` para aliviarlo.
+
+### Cómo se añade una fuente
+
+`lib/paper-service.ts` es el único punto por el que la interfaz obtiene un artículo. Añadir OpenAlex es: un cliente en `lib/academic/`, su normalizador en `lib/normalization/`, y combinar los resultados dentro de `getPaperByDoi`. La firma (`Promise<PaperResult>`, unión discriminada) no cambia, así que ninguna página ni componente se toca.
 
 ## Qué es PaperLens
 

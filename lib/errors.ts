@@ -6,6 +6,7 @@
 export type PaperErrorCode =
   | "invalid-doi"
   | "not-found"
+  | "rate-limited"
   | "source-unavailable";
 
 export const PAPER_ERROR_MESSAGES: Record<
@@ -21,6 +22,11 @@ export const PAPER_ERROR_MESSAGES: Record<
     title: "No encontramos información suficiente.",
     detail:
       "El DOI es válido, pero ninguna fuente consultada tiene datos de este artículo. Prueba con el título.",
+  },
+  "rate-limited": {
+    title: "Demasiadas consultas seguidas.",
+    detail:
+      "Semantic Scholar limita el número de peticiones sin clave de API. Espera unos segundos y vuelve a intentarlo. Configurar SEMANTIC_SCHOLAR_API_KEY en .env.local eleva ese límite.",
   },
   "source-unavailable": {
     title: "La fuente académica no está disponible.",

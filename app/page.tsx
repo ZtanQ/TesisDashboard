@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DoiSearchForm } from "@/components/search/doi-search-form";
 import { encodeDoiForUrl } from "@/lib/doi";
-import { MOCK_EXAMPLES } from "@/lib/mock/papers";
+import { EXAMPLE_DOIS } from "@/lib/examples";
 
 export default function Home() {
   return (
@@ -21,12 +21,8 @@ export default function Home() {
         <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
           Ejemplos
         </h2>
-        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          Todavía no hay fuentes académicas conectadas: estos DOI devuelven
-          datos de ejemplo para revisar la interfaz.
-        </p>
         <ul className="mt-4 space-y-2">
-          {MOCK_EXAMPLES.map((example) => (
+          {EXAMPLE_DOIS.map((example) => (
             <li key={example.doi}>
               <Link
                 href={`/analyze/${encodeDoiForUrl(example.doi)}`}
@@ -34,6 +30,9 @@ export default function Home() {
               >
                 <span className="text-zinc-900 underline-offset-4 group-hover:underline dark:text-zinc-100">
                   {example.label}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {example.note}
                 </span>
                 <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
                   {example.doi}
@@ -43,6 +42,12 @@ export default function Home() {
           ))}
         </ul>
       </section>
+
+      <p className="mt-10 text-xs text-zinc-400 dark:text-zinc-500">
+        Los datos provienen de Semantic Scholar. Las instituciones, los países y
+        el cuartil todavía no están disponibles: los aportará OpenAlex más
+        adelante.
+      </p>
     </main>
   );
 }

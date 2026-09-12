@@ -8,9 +8,10 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 1 completada.** La interfaz funciona de extremo a extremo, pero
-> contra datos de ejemplo: todavía no consulta ninguna API académica. La
-> siguiente fase conecta Semantic Scholar.
+> **Estado: Fase 2 completada.** Introduces un DOI y obtienes un dashboard con
+> datos reales de Semantic Scholar. Todavía no hay base de datos ni biblioteca.
+> Las instituciones, los países y el cuartil aparecen como no disponibles
+> porque Semantic Scholar no los publica; los aportará OpenAlex.
 > El roadmap completo está en [`Plan.md`](./Plan.md).
 
 ## Features
@@ -124,7 +125,12 @@ herramientas de apoyo.
 Además:
 
 - El cuartil corresponde a la **revista**, no al artículo, y se muestra tal como
-  lo reporta la fuente que lo publica.
+  lo reporta la fuente que lo publica. Semantic Scholar no lo publica, así que
+  hoy aparece siempre como no disponible.
+- Semantic Scholar rara vez incluye las afiliaciones de los autores, de modo que
+  las instituciones y los países quedan vacíos hasta que se integre OpenAlex.
+- Sin clave de API, Semantic Scholar limita las consultas y puede responder con
+  un aviso de "demasiadas consultas seguidas".
 - Cuando una fuente no proporciona un dato, se indica que no está disponible.
   El sistema nunca lo estima ni lo completa.
 - La cobertura depende de lo que indexen las APIs académicas consultadas.
