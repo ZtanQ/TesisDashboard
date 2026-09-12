@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–5, 7 y 8 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, y el artículo puede interpretarse con IA, sobre el abstract o sobre el PDF completo si se sube. La Fase 6 está bloqueada (ver abajo). Las siguientes disponibles son la 9 (comparación) y la 10 (estadísticas).
+**Fases 0–5 y 7–9 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), y varios artículos guardados pueden compararse entre sí. La Fase 6 está bloqueada (ver abajo). La siguiente disponible es la 10 (estadísticas de la biblioteca).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -21,6 +21,19 @@ Opciones, ninguna elegida todavía:
 - **No hacerlo** y dejar el cuartil como no disponible de forma permanente, quitando la tarjeta.
 
 Hasta que se decida, la tarjeta de cuartil muestra "Ninguna fuente lo publica", que es correcto pero permanente. **No inventar un cuartil calculándolo a partir de las citas**: el plan (§19) lo prohíbe explícitamente, y sería convertir una estimación en una falsa métrica.
+
+### Comparación: qué compara y qué no
+
+`lib/comparison.ts` es aritmética sobre datos ya obtenidos. No puntúa artículos ni infiere nada; una celda vacía en la tabla significa que la fuente no lo publica. Cuatro decisiones con test:
+
+- **Con un solo artículo no hay tópicos "compartidos".** La intersección de un conjunto consigo mismo sería todo, y eso induce a error: se devuelve vacío.
+- **Un rango sin ningún dato devuelve `null`, no cero.** Y `spread` informa de cuántos artículos no publican el dato, en vez de contarlos como cero.
+- **Metodología distingue dos ausencias distintas:** no haber analizado el artículo con IA, y haberlo analizado sin que declarase metodología. La interfaz las dice distinto.
+- **Solo se comparan análisis sin tema de investigación.** Uno hecho para una tesis concreta no dice lo mismo que otro hecho para otra, así que no son comparables entre sí.
+
+La selección vive en la URL (`/compare?doi=…&doi=…`), no en el servidor: una comparación concreta se puede compartir o reabrir. Entre 2 y 6 artículos.
+
+`lib/format.ts` fuerza el separador de miles incluso con cuatro cifras. La convención española escribe "8220" sin punto, pero estas cifras se leen comparándolas en columna, y mezclar "8220" con "101.683" —o el rango "8220–101.683"— hace tropezar.
 
 ### PDF: qué hace `lib/pdf/` y por qué así
 

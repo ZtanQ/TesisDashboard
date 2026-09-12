@@ -1,5 +1,6 @@
 import type { Paper, SourcedCount } from "@/types/paper";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { formatNumber } from "@/lib/format";
 
 const SOURCE_LABELS: Record<string, string> = {
   "semantic-scholar": "Semantic Scholar",
@@ -25,7 +26,7 @@ function countFootnote(counts?: SourcedCount[]): string | undefined {
   return counts
     .map(
       (entry) =>
-        `${entry.count.toLocaleString("es")} ${SOURCE_LABELS[entry.source]}`,
+        `${formatNumber(entry.count)} ${SOURCE_LABELS[entry.source]}`,
     )
     .join(" · ");
 }
@@ -42,12 +43,20 @@ export function MetricsGrid({ paper }: { paper: Paper }) {
       <MetricCard label="Año" value={paper.year} />
       <MetricCard
         label="Citas"
-        value={paper.citationCount?.toLocaleString("es")}
+        value={
+          paper.citationCount === undefined
+            ? undefined
+            : formatNumber(paper.citationCount)
+        }
         footnote={countFootnote(paper.citationCounts)}
       />
       <MetricCard
         label="Referencias"
-        value={paper.referenceCount?.toLocaleString("es")}
+        value={
+          paper.referenceCount === undefined
+            ? undefined
+            : formatNumber(paper.referenceCount)
+        }
         footnote={countFootnote(paper.referenceCounts)}
       />
       <MetricCard

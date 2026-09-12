@@ -439,6 +439,36 @@ export async function listLibrary(): Promise<DbResult<LibraryEntry[]>> {
   };
 }
 
+/**
+ * Recupera varios articulos de una vez, para comparar.
+ *
+ * Una sola consulta en lugar de una por DOI: comparar cinco articulos no
+ * deberia costar cinco viajes a la base.
+ */
+export async function getSavedPapers(dois: string[]): Promise<DbResult<Paper[]>> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: "not-configured" };
+  if (dois.length === 0) return { ok: true, data: [] };
+
+  const response = await withDeadline(
+    supabase.from("papers").select(PAPER_SELECT).in("doi", dois),
+  );
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
+  if (response.error) return fail(response.error.message);
+
+  const filas = (response.data ?? []) as unknown as PaperRow[];
+  const porDoi = new Map(filas.map((fila) => [fila.doi, rowToPaper(fila)]));
+
+  // Se devuelven en el orden pedido, no en el que responda la base: la tabla
+  // de comparacion debe respetar el orden en que se seleccionaron.
+  return {
+    ok: true,
+    data: dois
+      .map((doi) => porDoi.get(doi))
+      .filter((paper): paper is Paper => paper !== undefined),
+  };
+}
+
 /** Quita un articulo de la biblioteca. Las uniones caen en cascada. */
 export async function deleteSavedPaper(doi: string): Promise<DbResult<null>> {
   const supabase = getSupabase();

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { listLibrary } from "@/lib/database/papers";
-import { encodeDoiForUrl } from "@/lib/doi";
-import { Unavailable } from "@/components/ui/unavailable";
 import { ErrorNotice } from "@/components/ui/error-notice";
+import { LibrarySelection } from "@/components/papers/library-selection";
 
 export const metadata = {
   title: "Biblioteca · PaperLens",
@@ -16,14 +15,6 @@ export const metadata = {
  * configurada durante el build, dejaria grabado el mensaje de error.
  */
 export const dynamic = "force-dynamic";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export default async function LibraryPage() {
   const result = await listLibrary();
@@ -76,53 +67,7 @@ export default async function LibraryPage() {
           que aparezca aquí.
         </p>
       ) : (
-        <div className="mt-8 w-full min-w-0 overflow-x-auto">
-          <table className="w-full min-w-[36rem] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                <th className="py-2 pr-4 font-medium">Artículo</th>
-                <th className="py-2 pr-4 font-medium">Año</th>
-                <th className="py-2 pr-4 font-medium">Q</th>
-                <th className="py-2 pr-4 font-medium">Citas</th>
-                <th className="py-2 font-medium">Guardado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr
-                  key={entry.doi}
-                  className="border-b border-zinc-100 last:border-0 dark:border-zinc-900"
-                >
-                  <td className="py-3 pr-4">
-                    <Link
-                      href={`/analyze/${encodeDoiForUrl(entry.doi)}`}
-                      className="text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"
-                    >
-                      {entry.title}
-                    </Link>
-                    {entry.venue ? (
-                      <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
-                        {entry.venue}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="py-3 pr-4 tabular-nums text-zinc-600 dark:text-zinc-300">
-                    {entry.year ?? <Unavailable>—</Unavailable>}
-                  </td>
-                  <td className="py-3 pr-4 text-zinc-600 dark:text-zinc-300">
-                    {entry.quartile ?? <Unavailable>—</Unavailable>}
-                  </td>
-                  <td className="py-3 pr-4 tabular-nums text-zinc-600 dark:text-zinc-300">
-                    {entry.citationCount ?? <Unavailable>—</Unavailable>}
-                  </td>
-                  <td className="py-3 text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatDate(entry.savedAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LibrarySelection entries={entries} />
       )}
     </main>
   );

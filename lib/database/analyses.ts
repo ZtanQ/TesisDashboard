@@ -105,3 +105,42 @@ export async function deleteAnalyses(doi: string): Promise<DbResult<null>> {
   if (response.error) return fail(response.error.message);
   return { ok: true, data: null };
 }
+
+/**
+ * Analisis de varios articulos de una vez, para comparar.
+ *
+ * Solo los generados sin tema de investigacion (`research_topic` vacio): son
+ * los comparables entre si. Un analisis hecho para una tesis concreta no dice
+ * lo mismo que otro hecho para otra.
+ */
+export async function getSavedAnalyses(
+  dois: string[],
+): Promise<DbResult<Record<string, PaperAnalysis>>> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: "not-configured" };
+  if (dois.length === 0) return { ok: true, data: {} };
+
+  const response = await withDeadline(
+    supabase
+      .from("ai_analyses")
+      .select("payload, papers!inner(doi)")
+      .eq("research_topic", "")
+      .in("papers.doi", dois),
+  );
+
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
+  if (response.error) return fail(response.error.message);
+
+  const filas = (response.data ?? []) as unknown as {
+    payload: PaperAnalysis;
+    papers: { doi: string } | { doi: string }[];
+  }[];
+
+  const porDoi: Record<string, PaperAnalysis> = {};
+  for (const fila of filas) {
+    const doi = Array.isArray(fila.papers) ? fila.papers[0]?.doi : fila.papers?.doi;
+    if (doi) porDoi[doi] = fila.payload;
+  }
+
+  return { ok: true, data: porDoi };
+}

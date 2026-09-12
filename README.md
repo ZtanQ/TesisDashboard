@@ -8,9 +8,10 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: fases 0–5, 7 y 8 completadas.** Introduces un DOI, se consultan
+> **Estado: fases 0–5 y 7–9 completadas.** Introduces un DOI, se consultan
 > Semantic Scholar y OpenAlex en paralelo y se fusionan sus datos, puedes
-> guardar el resultado en tu biblioteca, subir el PDF e interpretarlo con IA.
+> guardar el resultado en tu biblioteca, subir el PDF, interpretarlo con IA y
+> comparar varios artículos entre sí.
 > Analizar funciona sin base de datos y sin clave de IA: ambas son opcionales.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.

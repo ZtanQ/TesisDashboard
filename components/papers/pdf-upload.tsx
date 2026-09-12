@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { Section } from "@/lib/pdf/sections";
+import { formatNumber } from "@/lib/format";
 import { removePdf, uploadPdf, type PdfActionState } from "@/app/actions/pdf";
 
 /**
@@ -54,7 +55,7 @@ export function PdfUpload({
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             {stored.pages} {stored.pages === 1 ? "página" : "páginas"} ·{" "}
-            {stored.characters.toLocaleString("es")} caracteres ·{" "}
+            {formatNumber(stored.characters)} caracteres ·{" "}
             {resumenSecciones(stored.sections)}
           </p>
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
