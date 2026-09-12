@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DoiSearchForm } from "@/components/search/doi-search-form";
+import { PdfIdentify } from "@/components/search/pdf-identify";
 import { encodeDoiForUrl } from "@/lib/doi";
 import { EXAMPLE_DOIS } from "@/lib/examples";
 
@@ -10,11 +11,20 @@ export default function Home() {
         PaperLens
       </h1>
       <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-        Analiza un artículo científico.
+        Analiza un artículo científico a partir de su DOI, un enlace o su PDF.
       </p>
 
       <div className="mt-8">
         <DoiSearchForm />
+      </div>
+
+      <div className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          ¿Tienes el PDF?
+        </h2>
+        <div className="mt-3">
+          <PdfIdentify />
+        </div>
       </div>
 
       <section className="mt-12 border-t border-zinc-200 pt-6 dark:border-zinc-800">
@@ -52,10 +62,10 @@ export default function Home() {
         </Link>
       </p>
 
-      <p className="mt-10 text-xs text-zinc-400 dark:text-zinc-500">
-        Los datos provienen de Semantic Scholar. Las instituciones, los países y
-        el cuartil todavía no están disponibles: los aportará OpenAlex más
-        adelante.
+      <p className="mt-10 max-w-prose text-xs text-zinc-400 dark:text-zinc-500">
+        Los datos provienen de OpenAlex, Semantic Scholar y Crossref, y el
+        cuartil de SCImago. Cuando una fuente no publica un dato, se dice; nunca
+        se rellena.
       </p>
     </main>
   );

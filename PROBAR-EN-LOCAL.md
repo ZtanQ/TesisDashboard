@@ -16,7 +16,9 @@ npm install
 npm run dev
 ```
 
-Abre <http://localhost:3000>, pega un DOI y pulsa **Analizar**.
+Abre <http://localhost:3000>. Puedes pegar un **DOI**, un **enlace** (de la
+editorial, de arXiv o de PubMed) o el **título**, y también **subir el PDF**
+para que identifique el artículo por ti.
 
 **No hace falta configurar nada más para esto.** Sin base de datos, sin claves
 de API y sin archivo `.env`. Las tres fuentes —OpenAlex, Semantic Scholar y
@@ -36,6 +38,18 @@ Copia cualquiera de estos:
 
 También sirve pegar la URL entera de doi.org, o incluso `(doi: 10.xxxx/yyyy)`
 copiado de una cita.
+
+### Enlaces y títulos que también funcionan
+
+| Entrada | Qué hace |
+| --- | --- |
+| `https://dl.acm.org/doi/10.1145/3292500.3330701` | Saca el DOI de la propia URL y va directo |
+| `https://pubmed.ncbi.nlm.nih.gov/9377276/` | Resuelve el PubMed ID a su DOI |
+| `https://arxiv.org/abs/1706.03762` | El preprint no tiene DOI, así que ofrece candidatos |
+| `Long Short-Term Memory Hochreiter` | Busca por título y ofrece candidatos |
+
+Cuando no hay un identificador claro, PaperLens **no elige por ti**: muestra los
+candidatos para que selecciones el correcto.
 
 ### Qué verás
 

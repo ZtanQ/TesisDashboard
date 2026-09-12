@@ -21,7 +21,7 @@ Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
 Del MVP (fases 1–3):
 
-- Entrada por DOI.
+- Entrada por DOI, enlace (editorial, arXiv, PubMed), título o PDF.
 - Consulta a Semantic Scholar.
 - Normalización a un modelo de datos interno.
 - Dashboard individual: título, autores, instituciones, países, año, revista,

@@ -61,6 +61,25 @@ Consecuencias en el código, todas con test:
 - **Autores: se emparejan por posición de firma.** Es lo único comparable: los identificadores son propios de cada fuente y los nombres pueden venir mutilados, así que no sirven como clave.
 - **Basta con que una fuente responda.** `10.1038/nature14539` existe en OpenAlex y no en Semantic Scholar: consultar ambas amplía la cobertura, no solo enriquece.
 
+### Cómo se identifica un artículo
+
+`lib/resolve-input.ts` interpreta lo que se escribe; `lib/search-service.ts` lo resuelve. La regla que gobierna todo esto: **una búsqueda por texto devuelve candidatos, no una respuesta**. Dar por bueno el primer resultado sería afirmar una identificación que nadie ha comprobado.
+
+| Entrada | Cómo se resuelve |
+|---|---|
+| DOI, en cualquier forma | directo |
+| Enlace con el DOI en la URL (Springer, ACM, Wiley, PLOS) | directo, sin salir a la red |
+| Enlace de PubMed | `pmid:` en OpenAlex → DOI |
+| Enlace de arXiv | `ARXIV:` en Semantic Scholar; si el preprint no tiene DOI, se busca por su título |
+| Título o texto libre | candidatos de OpenAlex + Crossref |
+| PDF | se lee el DOI impreso en la portada; si no lo lleva, se busca por el título extraído |
+
+**No se descarga ninguna página.** Se probó: ScienceDirect y MIT Press devuelven **403** a las peticiones automáticas, así que bajar la página para leer su `citation_doi` sería poco fiable, además de dejar que el servidor visite cualquier URL que le pasen. De ocho URLs reales de editoriales, seis llevan el identificador en la propia dirección.
+
+**La búsqueda usa dos fuentes porque se complementan.** Crossref puntúa muy bien los artículos de revista ("Long Short-Term Memory" sale primero con 53 puntos frente a 38); OpenAlex cubre congresos y preprints que Crossref no indexa (para "Attention Is All You Need", Crossref no devuelve el artículo correcto y OpenAlex sí). Si una de las dos no responde —OpenAlex limita las búsquedas anónimas bajo carga— **se dice en la interfaz** en lugar de mostrar una lista incompleta en silencio.
+
+**El DOI de un PDF se busca solo en los primeros 3.000 caracteres.** Más adelante empiezan las referencias, y el primer DOI de ahí es el de otro artículo: tomarlo significaría analizar un trabajo distinto del que se subió.
+
 ### El aviso de retractación
 
 `Paper.isRetracted` viene de OpenAlex. Es el dato más importante que puede traer una ficha —citar un artículo retractado en una tesis es un error grave— así que se muestra arriba del todo, con el único color de alarma de la aplicación.
