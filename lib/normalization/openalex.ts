@@ -172,6 +172,9 @@ export function normalizeOpenAlexWork(
     year: count(work.publication_year),
     publicationDate: text(work.publication_date),
     venue: text(work.primary_location?.source?.display_name),
+    venueIssn:
+      text(work.primary_location?.source?.issn_l) ??
+      text(work.primary_location?.source?.issn?.[0]),
     publisher: text(work.primary_location?.source?.host_organization_name),
     publicationType: publicationType(work),
     authors,

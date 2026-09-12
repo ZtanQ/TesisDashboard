@@ -2,10 +2,12 @@ import type { Paper } from "@/types/paper";
 import type { PaperErrorCode } from "@/lib/errors";
 import { normalizeDoi } from "@/lib/doi";
 import { fetchPaperByDoi } from "@/lib/academic/semantic-scholar";
-import { fetchWorkByDoi } from "@/lib/academic/openalex";
+import { fetchSourceByIssn, fetchWorkByDoi } from "@/lib/academic/openalex";
 import { normalizeSemanticScholarPaper } from "@/lib/normalization/semantic-scholar";
 import { normalizeOpenAlexWork } from "@/lib/normalization/openalex";
 import { mergePapers } from "@/lib/normalization/merge";
+import type { PaperMetrics } from "@/types/metrics";
+import { findScimagoMetrics } from "@/lib/database/journal-metrics";
 
 /**
  * Resultado de resolver un articulo. Union discriminada: quien la consume esta
@@ -23,6 +25,46 @@ export type PaperResult =
  * en Semantic Scholar), asi que consultar ambas amplia la cobertura ademas de
  * enriquecer los datos.
  */
+/**
+ * Metricas de la revista, de las dos fuentes que publican algo.
+ *
+ * OpenAlex da indice h y citas medias a dos anios; SCImago, cuartil y SJR.
+ * Son cosas distintas, asi que se conservan ambas con su procedencia en lugar
+ * de elegir una. Los fallos se ignoran: sin metricas de revista el articulo se
+ * muestra igual, solo que esas casillas dicen que no hay dato.
+ */
+async function journalMetrics(issn: string | undefined): Promise<PaperMetrics[]> {
+  if (!issn) return [];
+
+  const [openAlex, scimago] = await Promise.all([
+    fetchSourceByIssn(issn),
+    findScimagoMetrics(issn),
+  ]);
+
+  const metricas: PaperMetrics[] = [];
+
+  if (openAlex.ok) {
+    const stats = openAlex.source.summary_stats;
+    const hIndex = stats?.h_index ?? undefined;
+    const citedness = stats?.["2yr_mean_citedness"] ?? undefined;
+
+    if (hIndex !== undefined || citedness !== undefined) {
+      metricas.push({
+        source: "openalex",
+        // OpenAlex publica estas cifras sin fechar; corresponden al estado
+        // actual de su corpus, asi que se fechan en el anio en curso.
+        year: new Date().getFullYear(),
+        hIndex: hIndex ?? undefined,
+        twoYearMeanCitedness: citedness ?? undefined,
+      });
+    }
+  }
+
+  if (scimago) metricas.push(scimago);
+
+  return metricas;
+}
+
 export async function getPaperByDoi(input: string): Promise<PaperResult> {
   const doi = normalizeDoi(input);
   if (!doi) return { ok: false, error: "invalid-doi" };
@@ -42,11 +84,18 @@ export async function getPaperByDoi(input: string): Promise<PaperResult> {
   // OpenAlex va primero porque es el mas completo en lo estructural
   // (instituciones, paises, topicos, nombres); Semantic Scholar rellena lo
   // que le falta, sobre todo el venue y el titulo cuando OpenAlex lo trunca.
-  if (fromOpenAlex && fromSemanticScholar) {
-    return { ok: true, paper: mergePapers(fromOpenAlex, fromSemanticScholar) };
+  const fusionado =
+    fromOpenAlex && fromSemanticScholar
+      ? mergePapers(fromOpenAlex, fromSemanticScholar)
+      : (fromOpenAlex ?? fromSemanticScholar);
+
+  if (fusionado) {
+    const metrics = await journalMetrics(fusionado.venueIssn);
+    return {
+      ok: true,
+      paper: metrics.length > 0 ? { ...fusionado, metrics } : fusionado,
+    };
   }
-  if (fromOpenAlex) return { ok: true, paper: fromOpenAlex };
-  if (fromSemanticScholar) return { ok: true, paper: fromSemanticScholar };
 
   // Ninguna respondio: el motivo mas informativo manda. Que una fuente no
   // tenga el articulo es menos grave que no haber podido preguntar.

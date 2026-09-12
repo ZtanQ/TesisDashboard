@@ -129,7 +129,9 @@ describe("cuartiles", () => {
 
   it("cuenta el cuartil cuando existe", () => {
     const buckets = byQuartile([
-      paper({ metrics: { quartile: "Q1", source: "SCImago", year: 2024 } }),
+      paper({
+        metrics: [{ source: "scimago", year: 2024, quartile: "Q1" }],
+      }),
       paper(),
     ]);
     expect(buckets.find((b) => b.label === "Q1")?.count).toBe(1);

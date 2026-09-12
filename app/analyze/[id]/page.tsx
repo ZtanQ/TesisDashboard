@@ -10,6 +10,7 @@ import { TopicsList } from "@/components/papers/topics-list";
 import { Abstract } from "@/components/papers/abstract-section";
 import { SourceLinks } from "@/components/papers/source-links";
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
+import { JournalMetrics } from "@/components/papers/journal-metrics";
 import { CountriesBar } from "@/components/charts/countries-bar";
 import { Section } from "@/components/ui/section";
 import { ErrorNotice } from "@/components/ui/error-notice";
@@ -90,6 +91,13 @@ export default async function AnalyzePage({
 
       <Section title="Información bibliográfica">
         <BibliographicInfo paper={paper} />
+      </Section>
+
+      <Section
+        title="Métricas de la revista"
+        hint="Corresponden a la revista, no a este artículo."
+      >
+        <JournalMetrics metrics={paper.metrics} venue={paper.venue} />
       </Section>
 
       <Section title="Autores">

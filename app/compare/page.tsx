@@ -3,6 +3,7 @@ import { normalizeDoi, encodeDoiForUrl } from "@/lib/doi";
 import { getSavedPapers } from "@/lib/database/papers";
 import { getSavedAnalyses } from "@/lib/database/analyses";
 import { countryName } from "@/lib/countries";
+import { findQuartile } from "@/types/metrics";
 import { formatNumber } from "@/lib/format";
 import {
   compareTopics,
@@ -180,7 +181,7 @@ export default async function ComparePage({
               <Etiqueta>Cuartil</Etiqueta>
               {papers.map(({ paper }) => (
                 <Celda key={paper.doi}>
-                  {paper.metrics?.quartile ?? <Unavailable>—</Unavailable>}
+                  {findQuartile(paper.metrics)?.quartile ?? <Unavailable>—</Unavailable>}
                 </Celda>
               ))}
             </tr>

@@ -57,6 +57,9 @@ export interface OpenAlexWork {
       display_name?: string | null;
       host_organization_name?: string | null;
       type?: string | null;
+      /** ISSN normalizado de la revista: la clave para sus metricas. */
+      issn_l?: string | null;
+      issn?: string[] | null;
     } | null;
   } | null;
   open_access?: {
@@ -113,6 +116,61 @@ export async function fetchWorkByDoi(doi: string): Promise<OpenAlexResult> {
     const title = (work?.title ?? work?.display_name)?.trim();
     if (!title) return { ok: false, error: "not-found" };
     return { ok: true, work };
+  } catch {
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+// --- Metricas de la revista -------------------------------------------------
+
+export interface OpenAlexSource {
+  display_name?: string | null;
+  issn_l?: string | null;
+  summary_stats?: {
+    h_index?: number | null;
+    i10_index?: number | null;
+    /**
+     * Citas medias a dos anios. Misma formula que el Journal Impact Factor
+     * pero sobre el corpus de OpenAlex: **no es** el JIF de Clarivate.
+     */
+    "2yr_mean_citedness"?: number | null;
+  } | null;
+}
+
+export type OpenAlexSourceResult =
+  | { ok: true; source: OpenAlexSource }
+  | { ok: false; error: OpenAlexError };
+
+/**
+ * Metricas de una revista por su ISSN.
+ *
+ * Se busca por ISSN y no por nombre porque cada fuente escribe el nombre a su
+ * manera; el ISSN es el mismo en todas.
+ */
+export async function fetchSourceByIssn(
+  issn: string,
+): Promise<OpenAlexSourceResult> {
+  const mailto = process.env.OPENALEX_MAILTO;
+  const query = mailto ? `?mailto=${encodeURIComponent(mailto)}` : "";
+  const url = `${API_BASE}/sources/issn:${encodeURIComponent(issn)}${query}`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      // Las metricas de una revista cambian a lo sumo una vez al anio.
+      next: { revalidate: 86_400 },
+    });
+  } catch {
+    return { ok: false, error: "unavailable" };
+  }
+
+  if (response.status === 404) return { ok: false, error: "not-found" };
+  if (response.status === 429) return { ok: false, error: "rate-limited" };
+  if (!response.ok) return { ok: false, error: "unavailable" };
+
+  try {
+    return { ok: true, source: (await response.json()) as OpenAlexSource };
   } catch {
     return { ok: false, error: "unavailable" };
   }

@@ -59,14 +59,15 @@ function paperDePrueba(overrides: Partial<Paper> = {}): Paper {
       paper: "https://doi.org/" + DOI,
       pdf: "https://example.org/prueba.pdf",
     },
-    metrics: {
-      quartile: "Q1",
-      sjr: 2.5,
-      citescore: 9.1,
-      impactFactor: 4.2,
-      source: "SCImago",
-      year: 2023,
-    },
+    metrics: [
+      {
+        source: "scimago",
+        year: 2023,
+        quartile: "Q1",
+        quartileCategory: "Education",
+        sjr: 2.5,
+      },
+    ],
     source: [{ name: "semantic-scholar", retrievedAt: "2026-01-01T00:00:00Z" }],
     ...overrides,
   };
@@ -144,14 +145,19 @@ describeDb("persistencia de artículos", () => {
     const leido = await getSavedPaper(DOI);
     if (!leido.ok || !leido.data) throw new Error("no se recuperó el artículo");
 
-    expect(leido.data.metrics).toEqual({
-      quartile: "Q1",
-      sjr: 2.5,
-      citescore: 9.1,
-      impactFactor: 4.2,
-      source: "SCImago",
-      year: 2023,
-    });
+    expect(leido.data.metrics).toEqual([
+      {
+        source: "scimago",
+        year: 2023,
+        quartile: "Q1",
+        quartileCategory: "Education",
+        sjr: 2.5,
+        hIndex: undefined,
+        twoYearMeanCitedness: undefined,
+        citescore: undefined,
+        impactFactor: undefined,
+      },
+    ]);
   });
 
   it("distingue un cero real de un dato ausente al ir y volver", async () => {

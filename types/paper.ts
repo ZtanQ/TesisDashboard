@@ -53,6 +53,13 @@ export interface Paper {
 
   /** Revista o congreso. */
   venue?: string;
+  /**
+   * ISSN normalizado de la revista (`issn_l` de OpenAlex).
+   *
+   * Es la clave con la que se buscan las metricas de revista: el nombre no
+   * sirve porque cada fuente lo escribe a su manera.
+   */
+  venueIssn?: string;
   publisher?: string;
   publicationType?: PublicationType;
 
@@ -77,7 +84,8 @@ export interface Paper {
     pdf?: string;
   };
 
-  metrics?: PaperMetrics;
+  /** Metricas de la revista, una entrada por fuente. */
+  metrics?: PaperMetrics[];
 
   /** De donde salio este registro. Nunca vacio. */
   source: DataSource[];

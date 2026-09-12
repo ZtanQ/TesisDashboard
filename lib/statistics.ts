@@ -1,5 +1,5 @@
 import type { Paper } from "@/types/paper";
-import type { Quartile } from "@/types/metrics";
+import { findQuartile, type Quartile } from "@/types/metrics";
 
 /**
  * Agregados de la biblioteca completa.
@@ -126,7 +126,7 @@ export function byQuartile(papers: Paper[]): Bucket[] {
   cuenta.set("Sin dato", 0);
 
   for (const paper of papers) {
-    const cuartil = paper.metrics?.quartile;
+    const cuartil = findQuartile(paper.metrics)?.quartile;
     const etiqueta = cuartil ?? "Sin dato";
     cuenta.set(etiqueta, (cuenta.get(etiqueta) ?? 0) + 1);
   }

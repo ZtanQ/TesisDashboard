@@ -4,78 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–5 y 7–10 completadas.** El roadmap del plan está cubierto salvo la fase 6 (bloqueada, ver abajo), la autenticación y el despliegue. Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), varios artículos guardados pueden compararse entre sí, y `/statistics` agrega la biblioteca completa. La Fase 6 está bloqueada (ver abajo).
+**Fases 0–10 completadas.** El roadmap del plan está cubierto salvo la autenticación y el despliegue. Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), varios artículos guardados pueden compararse entre sí, y `/statistics` agrega la biblioteca completa. La Fase 6 está bloqueada (ver abajo).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
-## Pendientes que requieren una decisión
+## Métricas de revista: qué se publica y qué no
 
-### La Fase 6 (métricas y cuartiles) está bloqueada
+| Métrica | Fuente | Cómo llega |
+|---|---|---|
+| Cuartil, SJR | SCImago | CSV importado a mano (ver abajo) |
+| Índice h, citas medias a 2 años | OpenAlex | automático, por ISSN |
+| CiteScore | Scopus | **no integrado**, requiere suscripción |
+| Journal Impact Factor | Clarivate | **no integrado**, requiere suscripción |
 
-**Ninguna fuente integrada publica cuartil, SJR ni factor de impacto.** Verificado contra las APIs de Semantic Scholar y OpenAlex: ninguna de las dos los devuelve. El modelo (`PaperMetrics`), el esquema (tabla `metrics`) y la interfaz ya los soportan; lo que falta es de dónde sacarlos.
+Cuatro cosas que no conviene deshacer:
 
-Opciones, ninguna elegida todavía:
+- **`Paper.metrics` es una lista, no un objeto.** Cada fuente publica cosas distintas y para años distintos; un registro único obligaría a elegir un `source` y un `year` para todas, que es lo que el plan prohíbe (§19).
+- **Las citas medias a 2 años de OpenAlex NO son el Journal Impact Factor.** Es la misma fórmula sobre otro corpus, así que se muestra con su nombre propio y nunca como "Impact Factor". Etiquetarlo mal sería atribuir a Clarivate una cifra que no es suya.
+- **El cuartil se muestra con su categoría.** SCImago clasifica cada revista en varias categorías con un cuartil por cada una y publica el mejor; decir "Q1" a secas da una idea más favorable que la real en las demás áreas, así que se muestra "Q1 — mejor cuartil, en Cognitive Neuroscience".
+- **El emparejamiento es por ISSN, no por nombre.** Cada fuente escribe el nombre de la revista a su manera; el ISSN es el mismo. OpenAlex lo da como `issn_l` y se guarda en `Paper.venueIssn`.
 
-- **SCImago (SJR)** publica un ranking de revistas en CSV descargable, gratuito. Habría que importarlo y emparejar por ISSN — OpenAlex sí da el ISSN de la revista. Es la vía más viable.
-- **Scopus o Web of Science** tienen API, pero requieren suscripción institucional.
-- **No hacerlo** y dejar el cuartil como no disponible de forma permanente, quitando la tarjeta.
+### Importar el ranking de SCImago
 
-Hasta que se decida, la tarjeta de cuartil muestra "Ninguna fuente lo publica", que es correcto pero permanente. **No inventar un cuartil calculándolo a partir de las citas**: el plan (§19) lo prohíbe explícitamente, y sería convertir una estimación en una falsa métrica.
+Su web bloquea la descarga automática (Cloudflare devuelve 403), así que es un paso manual, una vez al año:
 
-### Estadísticas: dos decisiones de gráfico
+1. https://www.scimagojr.com/journalrank.php → elegir año → «Download data»
+2. `npm run import:scimago -- <archivo.csv> <año>`
 
-`lib/statistics.ts` agrega en memoria, no en SQL: a la escala de una biblioteca personal la diferencia no se nota y la lógica queda en un módulo puro que se puede probar. Tope de 500 artículos, y la página lo dice si se alcanza.
-
-- **Los años sin artículos se muestran igualmente.** Omitirlos comprime el eje: con artículos de 1997, 2015 y 2019, sin los huecos parecerían consecutivos. Hay test.
-- **La serie por año va en columnas sobre un eje horizontal, no en barras horizontales.** La primera versión usaba la lista de barras y una biblioteca de 23 años eran 23 filas, 20 de ellas vacías: el patrón se perdía en el ruido. Las columnas son la forma correcta para el tiempo.
-- **El recuento de autores es aproximado** y la interfaz lo dice: se agrupan por identificador de fuente cuando lo hay y por nombre cuando no, así que "A. Ruiz" y "Ana Ruiz" pueden contar por separado.
-- **Los cuartiles muestran siempre Q1–Q4 y «sin dato».** Hoy todo cae en «sin dato» y la página explica por qué; un gráfico que ocultara la categoría vacía haría parecer que el dato existe.
-
-### Comparación: qué compara y qué no
-
-`lib/comparison.ts` es aritmética sobre datos ya obtenidos. No puntúa artículos ni infiere nada; una celda vacía en la tabla significa que la fuente no lo publica. Cuatro decisiones con test:
-
-- **Con un solo artículo no hay tópicos "compartidos".** La intersección de un conjunto consigo mismo sería todo, y eso induce a error: se devuelve vacío.
-- **Un rango sin ningún dato devuelve `null`, no cero.** Y `spread` informa de cuántos artículos no publican el dato, en vez de contarlos como cero.
-- **Metodología distingue dos ausencias distintas:** no haber analizado el artículo con IA, y haberlo analizado sin que declarase metodología. La interfaz las dice distinto.
-- **Solo se comparan análisis sin tema de investigación.** Uno hecho para una tesis concreta no dice lo mismo que otro hecho para otra, así que no son comparables entre sí.
-
-La selección vive en la URL (`/compare?doi=…&doi=…`), no en el servidor: una comparación concreta se puede compartir o reabrir. Entre 2 y 6 artículos.
-
-`lib/format.ts` fuerza el separador de miles incluso con cuatro cifras. La convención española escribe "8220" sin punto, pero estas cifras se leen comparándolas en columna, y mezclar "8220" con "101.683" —o el rango "8220–101.683"— hace tropezar.
-
-### PDF: qué hace `lib/pdf/` y por qué así
-
-Un PDF no guarda párrafos, guarda líneas colocadas en una página. La tubería es extraer → limpiar → seccionar, y cada paso resuelve un problema medido sobre artículos reales, no supuesto:
-
-- **Palabras cortadas a final de línea.** `transduc-
-tion` hay que unirlo; `English-
-to` no. Son indistinguibles por su forma. La pista se busca **en el propio documento**: si una de las dos formas aparece en otro punto, esa es la buena. Medido sobre 16 casos reales: cuando hay evidencia acierta en los 16; cuando no la hay se conserva el guion, porque `sur-prisingly` se lee y `sequencealigned` queda corrompido. **No cambiar esto por una regla simple** — unir siempre da 9/16 y nunca unir da 7/16.
-- **Encabezados numerados cortan sección aunque no se reconozca el nombre.** Sin esa regla, `2 Background` se tragaba las secciones 3, 4 y 5 enteras y el modelo recibía un bloque de 17.000 caracteres mal etiquetado.
-- **La bibliografía se excluye** del texto que va al modelo: es la parte más voluminosa y la que menos aporta a interpretar el artículo (en una prueba real, 9.411 de 39.540 caracteres).
-- **Un encabezado sin cuerpo se conserva** (`6 Results` seguido de `6.1 …`): sitúa lo que viene después.
-
-**No se guarda el PDF, solo el texto.** Es lo que se usa después, quien lo subió ya tiene el archivo, y evita montar almacenamiento de binarios. Volver a subir reemplaza el anterior.
-
-**Un PDF escaneado se rechaza** con `no-text-layer` en lugar de analizar cuatro palabras sueltas como si fueran el artículo. Haría falta OCR, que no está implementado.
-
-`next.config.ts` sube `serverActions.bodySizeLimit` a 25 MB: el límite por defecto es 1 MB y un artículo lo pasa con facilidad. Ese número y `MAX_PDF_BYTES` en `lib/pdf/extract.ts` van juntos — si cambia uno, cambiar el otro.
-
-### El análisis por IA: qué lo mantiene honesto
-
-`lib/ai/paper-analysis.ts`. Tres mecanismos, no uno, porque pedírselo al modelo en el prompt no basta:
-
-1. **El esquema permite `null`.** Cada campo interpretable es anulable a propósito, así que "el texto no lo dice" es una respuesta válida que el modelo puede dar sin esforzarse en inventar. Se usa salida estructurada (`client.messages.parse` con Zod), no texto libre parseado a mano.
-2. **La interfaz escribe el "no consta".** El modelo devuelve `null`; la frase "No especificada en la información analizada" la pone el componente. Misma regla de capas que en el resto: la capa de datos no produce texto de interfaz.
-3. **Guarda previa de texto suficiente.** Sin abstract (o con menos de 120 caracteres) ni PDF subido no se llama al modelo: interpretar solo el título produce conjeturas. Devuelve `insufficient-text`.
-
-**Si hay PDF subido, se analiza el artículo entero** en vez del abstract, y queda registrado en `basedOn: "fulltext"`. Es la diferencia entre interpretar un resumen y leer el trabajo.
-
-**La relevancia exige un tema declarado.** Sin saber para qué investigación se pregunta, "relevancia ALTA" no significa nada: sería una opinión sin criterio, justo la falsa métrica que el plan descarta (§18). Por eso `RelevanceAssessment` incluye el `researchTopic` que la motivó — la valoración y su criterio no se guardan por separado — y sin tema el campo va a `null`.
-
-**Cada análisis cuesta dinero.** Por eso se lanza con un botón y no al cargar la página, y el resultado se guarda en `ai_analyses` con clave (artículo, tema): el mismo artículo analizado para dos tesis distintas son dos análisis distintos. Un análisis guardado se muestra aunque falte la clave de API: leerlo no cuesta nada.
-
-Modelo: `claude-opus-5`. Cambiar de modelo invalida la comparabilidad de los análisis ya guardados, que registran con qué modelo se generaron.
+Sin ese paso, el cuartil y el SJR aparecen como no disponibles y todo lo demás funciona igual. Los datos de SCImago son CC BY-NC: atribución obligatoria si se publican resultados.
 
 ### Qué aporta cada fuente (verificado contra las APIs)
 
@@ -100,10 +56,6 @@ Consecuencias en el código, todas con test:
 ### Las citas no coinciden, y se enseñan las dos
 
 Para el mismo artículo, OpenAlex dice 101.683 citas y Semantic Scholar 109.793; en otro, 8.220 frente a 11.493. Indexan corpus distintos y **ninguna cifra es la verdadera**. Por eso `Paper` tiene `citationCounts: SourcedCount[]` además del `citationCount` principal, y la tarjeta de métricas muestra el desglose cuando discrepan. No elegir una en silencio.
-
-### Ninguna fuente publica cuartil
-
-Ni OpenAlex ni Semantic Scholar dan cuartil, SJR ni factor de impacto, así que `metrics` queda sin definir y la tarjeta dice "Ninguna fuente lo publica". La Fase 6 necesita incorporar una fuente que sí los tenga.
 
 ### Límites de tasa
 

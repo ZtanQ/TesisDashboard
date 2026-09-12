@@ -1,4 +1,5 @@
 import type { Paper, SourcedCount } from "@/types/paper";
+import { findQuartile, METRIC_SOURCE_LABELS } from "@/types/metrics";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { formatNumber } from "@/lib/format";
 
@@ -32,11 +33,13 @@ function countFootnote(counts?: SourcedCount[]): string | undefined {
 }
 
 /**
- * Cifras de cabecera. El cuartil solo aparece si una fuente lo publica, y
- * siempre acompanado de esa fuente y su anio (invariantes 3 y 4).
+ * Cifras de cabecera.
+ *
+ * El cuartil solo aparece si una fuente lo publica, siempre acompanado de esa
+ * fuente y su anio (invariantes 3 y 4).
  */
 export function MetricsGrid({ paper }: { paper: Paper }) {
-  const { metrics } = paper;
+  const cuartil = findQuartile(paper.metrics);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -61,10 +64,10 @@ export function MetricsGrid({ paper }: { paper: Paper }) {
       />
       <MetricCard
         label="Cuartil"
-        value={metrics?.quartile}
+        value={cuartil?.quartile}
         footnote={
-          metrics?.quartile
-            ? `${metrics.source} · ${metrics.year}`
+          cuartil
+            ? `${METRIC_SOURCE_LABELS[cuartil.source]} · ${cuartil.year}`
             : "Ninguna fuente lo publica"
         }
       />

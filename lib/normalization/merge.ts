@@ -1,5 +1,6 @@
 import type { Author, Institution } from "@/types/author";
 import type { Paper, SourcedCount } from "@/types/paper";
+import type { PaperMetrics } from "@/types/metrics";
 
 /**
  * Combina el mismo articulo visto por varias fuentes.
@@ -121,6 +122,29 @@ function mergeCounts(
 }
 
 /**
+ * Une metricas de revista sin repetir la pareja (fuente, anio).
+ *
+ * No se eligen unas u otras: SCImago publica cuartil y SJR, OpenAlex indice h
+ * y citas medias a dos anios. Son cosas distintas y ninguna sustituye a la
+ * otra, asi que se conservan todas con su procedencia.
+ */
+function mergeMetrics(
+  ...listas: (PaperMetrics[] | undefined)[]
+): PaperMetrics[] | undefined {
+  const vistas = new Set<string>();
+  const salida: PaperMetrics[] = [];
+  for (const lista of listas) {
+    for (const metrica of lista ?? []) {
+      const clave = `${metrica.source}:${metrica.year}`;
+      if (vistas.has(clave)) continue;
+      vistas.add(clave);
+      salida.push(metrica);
+    }
+  }
+  return salida.length > 0 ? salida : undefined;
+}
+
+/**
  * Fusiona dos vistas del mismo articulo. `preferred` es la fuente que manda
  * en los empates; `secondary` rellena huecos.
  */
@@ -140,6 +164,7 @@ export function mergePapers(preferred: Paper, secondary: Paper): Paper {
     year: first(preferred.year, secondary.year),
     publicationDate: first(preferred.publicationDate, secondary.publicationDate),
     venue: first(preferred.venue, secondary.venue),
+    venueIssn: first(preferred.venueIssn, secondary.venueIssn),
     publisher: first(preferred.publisher, secondary.publisher),
     publicationType: first(
       preferred.publicationType,
@@ -165,7 +190,9 @@ export function mergePapers(preferred: Paper, secondary: Paper): Paper {
       paper: first(preferred.urls.paper, secondary.urls.paper),
       pdf: first(preferred.urls.pdf, secondary.urls.pdf),
     },
-    metrics: first(preferred.metrics, secondary.metrics),
+    // Las metricas se unen por fuente: SCImago y OpenAlex publican cosas
+    // distintas y ninguna sustituye a la otra.
+    metrics: mergeMetrics(preferred.metrics, secondary.metrics),
     source: [...preferred.source, ...secondary.source],
   };
 }

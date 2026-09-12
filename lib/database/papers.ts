@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DataSource, Paper, SourcedCount } from "@/types/paper";
 import type { Author, Institution } from "@/types/author";
-import type { PaperMetrics, Quartile } from "@/types/metrics";
+import type { MetricSource, PaperMetrics, Quartile } from "@/types/metrics";
 import { getSupabase, timedOut, withDeadline } from "@/lib/database/supabase";
 
 /**
@@ -164,6 +164,7 @@ export async function savePaper(
           publication_type: nullable(paper.publicationType),
           url: nullable(paper.urls.paper),
           open_access_url: nullable(paper.urls.pdf),
+          venue_issn: nullable(paper.venueIssn),
           citation_count: nullable(paper.citationCount),
           reference_count: nullable(paper.referenceCount),
           citation_counts: paper.citationCounts ?? [],
@@ -225,17 +226,20 @@ export async function savePaper(
       if (error) return fail(error.message);
     }
 
-    if (paper.metrics) {
+    if (paper.metrics && paper.metrics.length > 0) {
       const { error } = await supabase.from("metrics").upsert(
-        {
+        paper.metrics.map((metric) => ({
           paper_id: paperId,
-          source: paper.metrics.source,
-          year: paper.metrics.year,
-          quartile: nullable(paper.metrics.quartile),
-          sjr: nullable(paper.metrics.sjr),
-          citescore: nullable(paper.metrics.citescore),
-          impact_factor: nullable(paper.metrics.impactFactor),
-        },
+          source: metric.source,
+          year: metric.year,
+          quartile: nullable(metric.quartile),
+          quartile_category: nullable(metric.quartileCategory),
+          sjr: nullable(metric.sjr),
+          h_index: nullable(metric.hIndex),
+          two_year_mean_citedness: nullable(metric.twoYearMeanCitedness),
+          citescore: nullable(metric.citescore),
+          impact_factor: nullable(metric.impactFactor),
+        })),
         { onConflict: "paper_id,source,year" },
       );
       if (error) return fail(error.message);
@@ -286,11 +290,15 @@ interface PaperRow {
     } | null;
   }[];
   paper_topics?: { topics: { name: string } | null }[];
+  venue_issn: string | null;
   metrics?: {
     source: string;
     year: number;
     quartile: string | null;
+    quartile_category: string | null;
     sjr: number | null;
+    h_index: number | null;
+    two_year_mean_citedness: number | null;
     citescore: number | null;
     impact_factor: number | null;
   }[];
@@ -298,12 +306,13 @@ interface PaperRow {
 
 const PAPER_SELECT = [
   "id, doi, title, abstract, year, publication_date, venue, publisher",
-  "publication_type, url, open_access_url, citation_count, reference_count",
+  "publication_type, url, open_access_url, venue_issn",
+  "citation_count, reference_count",
   "citation_counts, reference_counts, sources, created_at",
   "paper_authors ( author_position, authors ( external_id, name, orcid ) )",
   "paper_institutions ( institutions ( external_id, name, country ) )",
   "paper_topics ( topics ( name ) )",
-  "metrics ( source, year, quartile, sjr, citescore, impact_factor )",
+  "metrics ( source, year, quartile, quartile_category, sjr, h_index, two_year_mean_citedness, citescore, impact_factor )",
 ].join(", ");
 
 /** Reconstruye el `Paper` del dominio a partir de las filas. */
@@ -326,17 +335,20 @@ function rowToPaper(row: PaperRow): Paper {
       country: optional(link.institutions!.country),
     }));
 
-  const metricRow = row.metrics?.[0];
-  const metrics: PaperMetrics | undefined = metricRow
-    ? {
-        source: metricRow.source,
-        year: metricRow.year,
-        quartile: optional(metricRow.quartile) as Quartile | undefined,
-        sjr: optional(metricRow.sjr),
-        citescore: optional(metricRow.citescore),
-        impactFactor: optional(metricRow.impact_factor),
-      }
-    : undefined;
+  const metrics: PaperMetrics[] | undefined =
+    row.metrics && row.metrics.length > 0
+      ? row.metrics.map((metricRow) => ({
+          source: metricRow.source as MetricSource,
+          year: metricRow.year,
+          quartile: optional(metricRow.quartile) as Quartile | undefined,
+          quartileCategory: optional(metricRow.quartile_category),
+          sjr: optional(metricRow.sjr),
+          hIndex: optional(metricRow.h_index),
+          twoYearMeanCitedness: optional(metricRow.two_year_mean_citedness),
+          citescore: optional(metricRow.citescore),
+          impactFactor: optional(metricRow.impact_factor),
+        }))
+      : undefined;
 
   return {
     id: row.id,
@@ -346,6 +358,7 @@ function rowToPaper(row: PaperRow): Paper {
     year: optional(row.year),
     publicationDate: optional(row.publication_date),
     venue: optional(row.venue),
+    venueIssn: optional(row.venue_issn),
     publisher: optional(row.publisher),
     publicationType: optional(row.publication_type) as Paper["publicationType"],
     authors,

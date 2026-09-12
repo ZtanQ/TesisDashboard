@@ -8,7 +8,7 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: fases 0–5 y 7–10 completadas.** Introduces un DOI, se consultan
+> **Estado: fases 0–10 completadas.** Introduces un DOI, se consultan
 > Semantic Scholar y OpenAlex en paralelo y se fusionan sus datos, puedes
 > guardar el resultado en tu biblioteca, subir el PDF, interpretarlo con IA y
 > comparar varios artículos entre sí y ver estadísticas de toda la biblioteca.
@@ -31,8 +31,7 @@ Del MVP (fases 1–3):
 Ya implementados: biblioteca personal, OpenAlex, análisis mediante IA,
 procesamiento de PDF, comparación de artículos y estadísticas del corpus.
 
-Pendientes: métricas y cuartiles (ninguna fuente integrada los publica),
-Crossref, autenticación y despliegue.
+Pendientes: Crossref, autenticación y despliegue.
 
 ## Architecture
 
@@ -140,8 +139,13 @@ herramientas de apoyo.
 
 Además:
 
-- El cuartil corresponde a la **revista**, no al artículo. Ninguna de las dos
-  fuentes actuales lo publica, así que hoy aparece siempre como no disponible.
+- El cuartil corresponde a la **revista**, no al artículo, y es el mejor de
+  todas sus categorías: se muestra junto a la categoría en que lo alcanza.
+  Requiere importar el ranking de SCImago (`npm run import:scimago`); sin ese
+  paso aparece como no disponible.
+- Las **citas medias a 2 años** de OpenAlex usan la misma fórmula que el
+  Journal Impact Factor pero sobre otro corpus: no son el JIF de Clarivate.
+  El CiteScore y el JIF requieren suscripción y no están integrados.
 - **Las cifras de citas no coinciden entre fuentes** porque indexan corpus
   distintos. PaperLens muestra ambas con su procedencia en lugar de elegir una.
 - **El análisis por IA es una interpretación, no un dato.** Se muestra en un
