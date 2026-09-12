@@ -8,10 +8,10 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 5 completada.** Introduces un DOI, se consultan Semantic
-> Scholar y OpenAlex en paralelo y se fusionan sus datos, y puedes guardar el
-> resultado en tu biblioteca. Analizar funciona sin base de datos; solo la
-> biblioteca la necesita.
+> **Estado: fases 0–5 y 7 completadas.** Introduces un DOI, se consultan
+> Semantic Scholar y OpenAlex en paralelo y se fusionan sus datos, puedes
+> guardar el resultado en tu biblioteca e interpretarlo con IA. Analizar
+> funciona sin base de datos y sin clave de IA: ambas son opcionales.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.
 > El roadmap completo está en [`Plan.md`](./Plan.md).
@@ -141,6 +141,12 @@ Además:
   fuentes actuales lo publica, así que hoy aparece siempre como no disponible.
 - **Las cifras de citas no coinciden entre fuentes** porque indexan corpus
   distintos. PaperLens muestra ambas con su procedencia en lugar de elegir una.
+- **El análisis por IA es una interpretación, no un dato.** Se muestra en un
+  bloque aparte y marcado. Cuando el texto analizado no dice algo, lo declara
+  en lugar de completarlo. Se basa en el título, el abstract y los metadatos:
+  no lee el artículo completo hasta que exista el procesamiento de PDF.
+- **La relevancia solo se valora si declaras tu tema de investigación**, porque
+  sin un criterio declarado no significaría nada.
 - Sin clave de API, Semantic Scholar limita las consultas y puede responder con
   un aviso de "demasiadas consultas seguidas".
 - Cuando una fuente no proporciona un dato, se indica que no está disponible.

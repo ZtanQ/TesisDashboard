@@ -15,6 +15,9 @@ import { Section } from "@/components/ui/section";
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { SaveButton } from "@/components/papers/save-button";
 import { getSavedPaper } from "@/lib/database/papers";
+import { getSavedAnalysis } from "@/lib/database/analyses";
+import { isAiConfigured } from "@/lib/ai/paper-analysis";
+import { AiAnalysis } from "@/components/papers/ai-analysis";
 
 export default async function AnalyzePage({
   params,
@@ -51,6 +54,11 @@ export default async function AnalyzePage({
   const saved = paper.doi ? await getSavedPaper(paper.doi) : null;
   const libraryAvailable = saved?.ok === true;
   const isSaved = saved?.ok === true && saved.data !== null;
+
+  // Un analisis ya guardado se reutiliza: cada uno cuesta una llamada de pago.
+  const previousAnalysis =
+    paper.doi && isSaved ? await getSavedAnalysis(paper.doi) : null;
+  const aiAvailable = isAiConfigured();
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-3xl flex-1 px-6 py-12">
@@ -99,6 +107,19 @@ export default async function AnalyzePage({
 
       <Section title="Abstract">
         <Abstract abstract={paper.abstract} />
+      </Section>
+
+      <Section
+        title="Análisis por IA"
+        hint="Interpretación generada, no datos obtenidos de las fuentes."
+      >
+        {paper.doi ? (
+          <AiAnalysis
+            doi={paper.doi}
+            saved={previousAnalysis?.ok ? previousAnalysis.data : null}
+            canRun={aiAvailable}
+          />
+        ) : null}
       </Section>
 
       <Section title="Fuentes">

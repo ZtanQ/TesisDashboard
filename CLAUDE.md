@@ -4,9 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–5 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan y sale un dashboard que puede guardarse en una biblioteca persistente. La siguiente es la Fase 6 (métricas y cuartiles), que necesita una fuente que los publique: ninguna de las dos actuales lo hace.
+**Fases 0–5 y 7 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, y el artículo puede interpretarse con IA. La Fase 6 está bloqueada (ver abajo). Las siguientes disponibles son la 8 (PDF), la 9 (comparación) y la 10 (estadísticas).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
+
+## Pendientes que requieren una decisión
+
+### La Fase 6 (métricas y cuartiles) está bloqueada
+
+**Ninguna fuente integrada publica cuartil, SJR ni factor de impacto.** Verificado contra las APIs de Semantic Scholar y OpenAlex: ninguna de las dos los devuelve. El modelo (`PaperMetrics`), el esquema (tabla `metrics`) y la interfaz ya los soportan; lo que falta es de dónde sacarlos.
+
+Opciones, ninguna elegida todavía:
+
+- **SCImago (SJR)** publica un ranking de revistas en CSV descargable, gratuito. Habría que importarlo y emparejar por ISSN — OpenAlex sí da el ISSN de la revista. Es la vía más viable.
+- **Scopus o Web of Science** tienen API, pero requieren suscripción institucional.
+- **No hacerlo** y dejar el cuartil como no disponible de forma permanente, quitando la tarjeta.
+
+Hasta que se decida, la tarjeta de cuartil muestra "Ninguna fuente lo publica", que es correcto pero permanente. **No inventar un cuartil calculándolo a partir de las citas**: el plan (§19) lo prohíbe explícitamente, y sería convertir una estimación en una falsa métrica.
+
+### El análisis por IA: qué lo mantiene honesto
+
+`lib/ai/paper-analysis.ts`. Tres mecanismos, no uno, porque pedírselo al modelo en el prompt no basta:
+
+1. **El esquema permite `null`.** Cada campo interpretable es anulable a propósito, así que "el texto no lo dice" es una respuesta válida que el modelo puede dar sin esforzarse en inventar. Se usa salida estructurada (`client.messages.parse` con Zod), no texto libre parseado a mano.
+2. **La interfaz escribe el "no consta".** El modelo devuelve `null`; la frase "No especificada en la información analizada" la pone el componente. Misma regla de capas que en el resto: la capa de datos no produce texto de interfaz.
+3. **Guarda previa de texto suficiente.** Sin abstract (o con menos de 120 caracteres) no se llama al modelo: interpretar solo el título produce conjeturas. Devuelve `insufficient-text`.
+
+**La relevancia exige un tema declarado.** Sin saber para qué investigación se pregunta, "relevancia ALTA" no significa nada: sería una opinión sin criterio, justo la falsa métrica que el plan descarta (§18). Por eso `RelevanceAssessment` incluye el `researchTopic` que la motivó — la valoración y su criterio no se guardan por separado — y sin tema el campo va a `null`.
+
+**Cada análisis cuesta dinero.** Por eso se lanza con un botón y no al cargar la página, y el resultado se guarda en `ai_analyses` con clave (artículo, tema): el mismo artículo analizado para dos tesis distintas son dos análisis distintos. Un análisis guardado se muestra aunque falte la clave de API: leerlo no cuesta nada.
+
+Modelo: `claude-opus-5`. Cambiar de modelo invalida la comparabilidad de los análisis ya guardados, que registran con qué modelo se generaron.
 
 ### Qué aporta cada fuente (verificado contra las APIs)
 
