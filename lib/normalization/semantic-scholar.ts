@@ -132,6 +132,8 @@ export function normalizeSemanticScholarPaper(
   ];
 
   const doiFromApi = raw.externalIds?.["DOI"];
+  const citationCount = count(raw.citationCount);
+  const referenceCount = count(raw.referenceCount);
 
   return {
     doi: text(typeof doiFromApi === "string" ? doiFromApi : undefined)?.toLowerCase() ?? requestedDoi,
@@ -149,8 +151,17 @@ export function normalizeSemanticScholarPaper(
     institutions,
     countries,
     topics: normalizeTopics(raw),
-    citationCount: count(raw.citationCount),
-    referenceCount: count(raw.referenceCount),
+    citationCount,
+    referenceCount,
+    // Se declara con su fuente porque las fuentes no coinciden entre si.
+    citationCounts:
+      citationCount === undefined
+        ? undefined
+        : [{ source: "semantic-scholar", count: citationCount }],
+    referenceCounts:
+      referenceCount === undefined
+        ? undefined
+        : [{ source: "semantic-scholar", count: referenceCount }],
     urls: {
       paper: text(raw.url) ?? `https://doi.org/${requestedDoi}`,
       pdf: text(raw.openAccessPdf?.url),

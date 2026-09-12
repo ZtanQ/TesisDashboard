@@ -8,9 +8,10 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 4 completada.** Introduces un DOI, obtienes un dashboard con
-> datos reales de Semantic Scholar y puedes guardarlo en tu biblioteca.
-> Analizar funciona sin base de datos; solo la biblioteca la necesita.
+> **Estado: Fase 5 completada.** Introduces un DOI, se consultan Semantic
+> Scholar y OpenAlex en paralelo y se fusionan sus datos, y puedes guardar el
+> resultado en tu biblioteca. Analizar funciona sin base de datos; solo la
+> biblioteca la necesita.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.
 > El roadmap completo está en [`Plan.md`](./Plan.md).
@@ -67,8 +68,8 @@ El sistema distingue siempre entre **datos obtenidos** de una fuente y
 
 | Fuente           | Fase | Uso                                            |
 | ---------------- | ---- | ---------------------------------------------- |
-| Semantic Scholar | 2    | Fuente primaria: paper, autores, citas, referencias |
-| OpenAlex         | 5    | Instituciones, países, tópicos; contraste de datos |
+| Semantic Scholar | 2    | Venue, título completo, citas; complementa a OpenAlex |
+| OpenAlex         | 5    | Instituciones, países, tópicos, abstract, editorial |
 | Crossref         | 5+   | Metadatos de DOI                                |
 | Scopus · IEEE · WoS | futura | Solo si se dispone de acceso adecuado        |
 
@@ -136,11 +137,10 @@ herramientas de apoyo.
 
 Además:
 
-- El cuartil corresponde a la **revista**, no al artículo, y se muestra tal como
-  lo reporta la fuente que lo publica. Semantic Scholar no lo publica, así que
-  hoy aparece siempre como no disponible.
-- Semantic Scholar rara vez incluye las afiliaciones de los autores, de modo que
-  las instituciones y los países quedan vacíos hasta que se integre OpenAlex.
+- El cuartil corresponde a la **revista**, no al artículo. Ninguna de las dos
+  fuentes actuales lo publica, así que hoy aparece siempre como no disponible.
+- **Las cifras de citas no coinciden entre fuentes** porque indexan corpus
+  distintos. PaperLens muestra ambas con su procedencia en lugar de elegir una.
 - Sin clave de API, Semantic Scholar limita las consultas y puede responder con
   un aviso de "demasiadas consultas seguidas".
 - Cuando una fuente no proporciona un dato, se indica que no está disponible.

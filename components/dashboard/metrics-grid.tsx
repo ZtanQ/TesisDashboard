@@ -1,5 +1,34 @@
-import type { Paper } from "@/types/paper";
+import type { Paper, SourcedCount } from "@/types/paper";
 import { MetricCard } from "@/components/dashboard/metric-card";
+
+const SOURCE_LABELS: Record<string, string> = {
+  "semantic-scholar": "Semantic Scholar",
+  openalex: "OpenAlex",
+  crossref: "Crossref",
+};
+
+/**
+ * Nota al pie de un recuento.
+ *
+ * Con una sola fuente, la nombra. Con varias que coinciden, tambien. Cuando
+ * discrepan —lo normal entre Semantic Scholar y OpenAlex, que indexan corpus
+ * distintos— se enseñan las dos cifras en vez de elegir una en silencio.
+ */
+function countFootnote(counts?: SourcedCount[]): string | undefined {
+  if (!counts || counts.length === 0) return undefined;
+
+  const values = new Set(counts.map((entry) => entry.count));
+  if (values.size === 1) {
+    return counts.map((entry) => SOURCE_LABELS[entry.source]).join(" · ");
+  }
+
+  return counts
+    .map(
+      (entry) =>
+        `${entry.count.toLocaleString("es")} ${SOURCE_LABELS[entry.source]}`,
+    )
+    .join(" · ");
+}
 
 /**
  * Cifras de cabecera. El cuartil solo aparece si una fuente lo publica, y
@@ -11,8 +40,16 @@ export function MetricsGrid({ paper }: { paper: Paper }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <MetricCard label="Año" value={paper.year} />
-      <MetricCard label="Citas" value={paper.citationCount} />
-      <MetricCard label="Referencias" value={paper.referenceCount} />
+      <MetricCard
+        label="Citas"
+        value={paper.citationCount?.toLocaleString("es")}
+        footnote={countFootnote(paper.citationCounts)}
+      />
+      <MetricCard
+        label="Referencias"
+        value={paper.referenceCount?.toLocaleString("es")}
+        footnote={countFootnote(paper.referenceCounts)}
+      />
       <MetricCard
         label="Cuartil"
         value={metrics?.quartile}

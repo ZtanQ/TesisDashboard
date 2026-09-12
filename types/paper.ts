@@ -12,6 +12,20 @@ export interface DataSource {
   retrievedAt?: string;
 }
 
+/**
+ * Un recuento atribuido a la fuente que lo publica.
+ *
+ * Existe porque las fuentes no coinciden: para el mismo articulo, Semantic
+ * Scholar y OpenAlex dan cifras de citas que difieren entre un 10 y un 30 %,
+ * porque indexan corpus distintos. Ninguna es "la verdadera", asi que se
+ * guardan todas y la interfaz enseña la discrepancia en vez de ocultarla
+ * (Plan.md, principio 5: toda metrica debe tener fuente).
+ */
+export interface SourcedCount {
+  source: DataSourceName;
+  count: number;
+}
+
 export type PublicationType =
   | "journal-article"
   | "conference-paper"
@@ -48,8 +62,13 @@ export interface Paper {
   countries: string[];
   topics: string[];
 
+  /** Recuento principal, el de la fuente preferida para este articulo. */
   citationCount?: number;
   referenceCount?: number;
+
+  /** Todos los recuentos obtenidos, uno por fuente. Puede haber uno solo. */
+  citationCounts?: SourcedCount[];
+  referenceCounts?: SourcedCount[];
 
   urls: {
     /** Pagina del articulo en el editor o en la fuente. */

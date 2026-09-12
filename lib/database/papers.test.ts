@@ -51,6 +51,10 @@ function paperDePrueba(overrides: Partial<Paper> = {}): Paper {
     topics: ["Educación", "Metodología"],
     citationCount: 42,
     referenceCount: 17,
+    citationCounts: [
+      { source: "openalex", count: 42 },
+      { source: "semantic-scholar", count: 47 },
+    ],
     urls: {
       paper: "https://doi.org/" + DOI,
       pdf: "https://example.org/prueba.pdf",
@@ -97,6 +101,21 @@ describeDb("persistencia de artículos", () => {
     expect(paper.urls.pdf).toBe("https://example.org/prueba.pdf");
     expect(paper.topics.sort()).toEqual(["Educación", "Metodología"]);
     expect(paper.source[0].name).toBe("semantic-scholar");
+  });
+
+  it("conserva el desglose de citas por fuente", async () => {
+    // La discrepancia entre fuentes tiene que sobrevivir a la base: es lo que
+    // permite a la interfaz enseñar ambas cifras en lugar de elegir una.
+    await savePaper(paperDePrueba());
+    const leido = await getSavedPaper(DOI);
+    if (!leido.ok || !leido.data) throw new Error("no se recuperó el artículo");
+
+    expect(leido.data.citationCounts).toEqual([
+      { source: "openalex", count: 42 },
+      { source: "semantic-scholar", count: 47 },
+    ]);
+    // Sin desglose guardado, el campo queda sin definir, no como lista vacía.
+    expect(leido.data.referenceCounts).toBeUndefined();
   });
 
   it("conserva el orden de firma de los autores", async () => {

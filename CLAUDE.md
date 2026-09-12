@@ -4,24 +4,49 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–4 completadas.** Se introduce un DOI, sale un dashboard con datos reales de Semantic Scholar, y el artículo puede guardarse en una biblioteca persistente. La siguiente es la Fase 5 (OpenAlex), que llenaría instituciones, países y tópicos finos.
+**Fases 0–5 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan y sale un dashboard que puede guardarse en una biblioteca persistente. La siguiente es la Fase 6 (métricas y cuartiles), que necesita una fuente que los publique: ninguna de las dos actuales lo hace.
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
-### Qué no da Semantic Scholar (verificado contra la API)
+### Qué aporta cada fuente (verificado contra las APIs)
 
-Importa porque define qué secciones del dashboard salen vacías hoy y qué debe aportar OpenAlex en la Fase 5:
+Ninguna manda sobre la otra, y por eso se consultan las dos. La lógica de fusión está en `lib/normalization/merge.ts`; cada regla responde a un fallo observado:
 
-- **`authors[].affiliations` llega vacío prácticamente siempre.** Sin afiliaciones no hay instituciones ni países: esas tres secciones muestran "no disponible". No se infiere el país a partir del nombre de la institución — sería inventar.
-- **No publica cuartil, SJR ni factor de impacto.** `metrics` se queda sin definir; la tarjeta de cuartil dice "Ninguna fuente lo publica".
-- **`openAccessPdf.url` puede ser `""`** en vez de ausente. El normalizador trata la cadena vacía como campo ausente.
-- **`publicationTypes` se contradice** (devuelve `["Book","JournalArticle","Conference"]` para una misma ponencia). Se prefiere `publicationVenue.type`, que sí distingue journal de conference.
-- **Los nombres con caracteres no ASCII llegan mutilados** en algunos registros ("Jrgen Schmidhuber" por "Jürgen"). Es un defecto del dato de origen, no del cliente: se muestra tal cual, sin corregirlo a mano. Cotejar con OpenAlex es el arreglo real.
-- **Hay DOIs válidos que no están indexados** (p. ej. `10.1038/nature14539`): devuelven 404 y se muestran como "no encontrado".
+| | OpenAlex | Semantic Scholar |
+|---|---|---|
+| Instituciones y países | sí, con ROR y código ISO | **nunca** (`affiliations` llega vacío) |
+| Tópicos | específicos ("Neural Networks and Applications") | amplios ("Computer Science") |
+| Abstract | sí, como índice invertido | a menudo ausente |
+| Editorial | sí | rara vez |
+| Nombres de autor | correctos | **mutila los no ASCII** ("Jrgen" por "Jürgen") |
+| Venue | a veces ausente | sí |
+| Título | **a veces truncado** ("Optuna") | completo |
 
-### Límite de tasa
+Consecuencias en el código, todas con test:
 
-Sin `SEMANTIC_SCHOLAR_API_KEY` se usa el pool anónimo, que devuelve **429 con facilidad** (ocurre en uso normal, no solo bajo carga). Por eso tiene su propio código de error y su propio mensaje, en vez de mezclarse con "fuente caída". Las consultas se cachean una hora con `next: { revalidate: 3600 }` para aliviarlo.
+- **Título y abstract: gana el más largo**, no una fuente fija. El fallo observado es el truncamiento, y el texto más largo es el que no está truncado.
+- **Autores: se emparejan por posición de firma.** Es lo único comparable: los identificadores son propios de cada fuente y los nombres pueden venir mutilados, así que no sirven como clave.
+- **Basta con que una fuente responda.** `10.1038/nature14539` existe en OpenAlex y no en Semantic Scholar: consultar ambas amplía la cobertura, no solo enriquece.
+
+### Las citas no coinciden, y se enseñan las dos
+
+Para el mismo artículo, OpenAlex dice 101.683 citas y Semantic Scholar 109.793; en otro, 8.220 frente a 11.493. Indexan corpus distintos y **ninguna cifra es la verdadera**. Por eso `Paper` tiene `citationCounts: SourcedCount[]` además del `citationCount` principal, y la tarjeta de métricas muestra el desglose cuando discrepan. No elegir una en silencio.
+
+### Ninguna fuente publica cuartil
+
+Ni OpenAlex ni Semantic Scholar dan cuartil, SJR ni factor de impacto, así que `metrics` queda sin definir y la tarjeta dice "Ninguna fuente lo publica". La Fase 6 necesita incorporar una fuente que sí los tenga.
+
+### Límites de tasa
+
+Sin `SEMANTIC_SCHOLAR_API_KEY` se usa el pool anónimo de Semantic Scholar, que devuelve **429 con facilidad** (ocurre en uso normal, no solo bajo carga). Por eso tiene su propio código de error y su propio mensaje, en vez de mezclarse con "fuente caída". OpenAlex no usa clave: `OPENALEX_MAILTO` activa su "polite pool" y da más margen. Las consultas se cachean una hora con `next: { revalidate: 3600 }`.
+
+### Plazos en la base de datos
+
+Las operaciones de `lib/database/` van envueltas en `withDeadline`. Hace falta porque **`supabase-js` reintenta por su cuenta**: con la base caída hacía cuatro intentos y cada análisis tardaba 7 segundos, pese a haber un tope por intento. Un tope por intento no basta; el plazo tiene que cubrir la operación completa. Medido: 7,2 s antes, 2,5 s después, y 0,2–0,8 s con la base operativa.
+
+### Aplicar una migración nueva
+
+`npx supabase start` solo aplica migraciones cuando **crea** la base. Sobre una que ya existe hay que ejecutar `npx supabase migration up --local`; si no, el código espera columnas que no están.
 
 ### La biblioteca es opcional
 

@@ -1,9 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DataSource, Paper } from "@/types/paper";
+import type { DataSource, Paper, SourcedCount } from "@/types/paper";
 import type { Author, Institution } from "@/types/author";
 import type { PaperMetrics, Quartile } from "@/types/metrics";
-import { getSupabase } from "@/lib/database/supabase";
+import { getSupabase, timedOut, withDeadline } from "@/lib/database/supabase";
 
 /**
  * Persistencia de articulos. Un `Paper` se reparte en ocho tablas, asi que
@@ -35,6 +35,8 @@ export interface LibraryEntry {
 function fail(detail?: string): DbResult<never> {
   return { ok: false, error: "failed", detail };
 }
+
+const TIMEOUT_DETAIL = "La base de datos no respondió a tiempo.";
 
 /** Convierte `undefined` en `null`, que es lo que entiende PostgREST. */
 function nullable<T>(value: T | undefined): T | null {
@@ -147,9 +149,10 @@ export async function savePaper(
   if (!paper.doi) return fail("El artículo no tiene DOI, que es su identidad.");
 
   try {
-    const upserted = await supabase
-      .from("papers")
-      .upsert(
+    const upserted = await withDeadline(
+      supabase
+        .from("papers")
+        .upsert(
         {
           doi: paper.doi,
           title: paper.title,
@@ -163,13 +166,16 @@ export async function savePaper(
           open_access_url: nullable(paper.urls.pdf),
           citation_count: nullable(paper.citationCount),
           reference_count: nullable(paper.referenceCount),
+          citation_counts: paper.citationCounts ?? [],
+          reference_counts: paper.referenceCounts ?? [],
           sources: paper.source,
         },
-        { onConflict: "doi" },
-      )
-      .select("id")
-      .single();
-
+          { onConflict: "doi" },
+        )
+        .select("id")
+        .single(),
+    );
+    if (timedOut(upserted)) return fail(TIMEOUT_DETAIL);
     if (upserted.error) return fail(upserted.error.message);
     const paperId = upserted.data.id as string;
 
@@ -260,6 +266,8 @@ interface PaperRow {
   open_access_url: string | null;
   citation_count: number | null;
   reference_count: number | null;
+  citation_counts: SourcedCount[] | null;
+  reference_counts: SourcedCount[] | null;
   sources: DataSource[] | null;
   created_at: string;
   paper_authors?: {
@@ -291,7 +299,7 @@ interface PaperRow {
 const PAPER_SELECT = [
   "id, doi, title, abstract, year, publication_date, venue, publisher",
   "publication_type, url, open_access_url, citation_count, reference_count",
-  "sources, created_at",
+  "citation_counts, reference_counts, sources, created_at",
   "paper_authors ( author_position, authors ( external_id, name, orcid ) )",
   "paper_institutions ( institutions ( external_id, name, country ) )",
   "paper_topics ( topics ( name ) )",
@@ -354,6 +362,10 @@ function rowToPaper(row: PaperRow): Paper {
       .map((link) => link.topics!.name),
     citationCount: optional(row.citation_count),
     referenceCount: optional(row.reference_count),
+    citationCounts: row.citation_counts?.length ? row.citation_counts : undefined,
+    referenceCounts: row.reference_counts?.length
+      ? row.reference_counts
+      : undefined,
     urls: {
       paper: optional(row.url),
       pdf: optional(row.open_access_url),
@@ -370,12 +382,12 @@ export async function getSavedPaper(
   const supabase = getSupabase();
   if (!supabase) return { ok: false, error: "not-configured" };
 
-  const { data, error } = await supabase
-    .from("papers")
-    .select(PAPER_SELECT)
-    .eq("doi", doi)
-    .maybeSingle();
+  const response = await withDeadline(
+    supabase.from("papers").select(PAPER_SELECT).eq("doi", doi).maybeSingle(),
+  );
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
 
+  const { data, error } = response;
   if (error) return fail(error.message);
   if (!data) return { ok: true, data: null };
 
@@ -387,14 +399,18 @@ export async function listLibrary(): Promise<DbResult<LibraryEntry[]>> {
   const supabase = getSupabase();
   if (!supabase) return { ok: false, error: "not-configured" };
 
-  const { data, error } = await supabase
-    .from("papers")
-    .select(
-      "doi, title, year, venue, citation_count, created_at, metrics ( quartile )",
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const response = await withDeadline(
+    supabase
+      .from("papers")
+      .select(
+        "doi, title, year, venue, citation_count, created_at, metrics ( quartile )",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200),
+  );
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
 
+  const { data, error } = response;
   if (error) return fail(error.message);
 
   const rows = (data ?? []) as unknown as {
@@ -428,7 +444,10 @@ export async function deleteSavedPaper(doi: string): Promise<DbResult<null>> {
   const supabase = getSupabase();
   if (!supabase) return { ok: false, error: "not-configured" };
 
-  const { error } = await supabase.from("papers").delete().eq("doi", doi);
-  if (error) return fail(error.message);
+  const response = await withDeadline(
+    supabase.from("papers").delete().eq("doi", doi),
+  );
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
+  if (response.error) return fail(response.error.message);
   return { ok: true, data: null };
 }
