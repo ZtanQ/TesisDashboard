@@ -80,6 +80,9 @@ funcione.
 
 ## Installation
 
+> ¿Solo quieres probarlo? [**PROBAR-EN-LOCAL.md**](./PROBAR-EN-LOCAL.md) lo
+> explica paso a paso, con DOIs de ejemplo y los problemas más frecuentes.
+
 Requiere Node.js 20.9 o superior.
 
 ```bash
