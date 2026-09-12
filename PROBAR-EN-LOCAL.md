@@ -19,8 +19,8 @@ npm run dev
 Abre <http://localhost:3000>, pega un DOI y pulsa **Analizar**.
 
 **No hace falta configurar nada más para esto.** Sin base de datos, sin claves
-de API y sin archivo `.env`. Semantic Scholar y OpenAlex se consultan de forma
-anónima.
+de API y sin archivo `.env`. Las tres fuentes —OpenAlex, Semantic Scholar y
+Crossref— se consultan de forma anónima.
 
 ### DOIs para probar
 
@@ -32,6 +32,7 @@ Copia cualquiera de estos:
 | `10.1145/3292500.3330701` | Ponencia de congreso |
 | `10.1038/nature14539` | Solo está en OpenAlex: sin esa fuente daría «no encontrado» |
 | `10.1371/journal.pone.0000217` | Acceso abierto |
+| `10.1016/S0140-6736(97)11096-0` | **Artículo retractado**: sale un aviso rojo arriba |
 
 También sirve pegar la URL entera de doi.org, o incluso `(doi: 10.xxxx/yyyy)`
 copiado de una cita.
@@ -39,9 +40,14 @@ copiado de una cita.
 ### Qué verás
 
 - Autores con su institución y país.
-- **Dos cifras de citas**, una por fuente, cuando no coinciden. No es un error:
-  Semantic Scholar y OpenAlex indexan corpus distintos y PaperLens enseña
-  ambas en lugar de elegir una.
+- **Hasta tres cifras de citas**, una por fuente, cuando no coinciden. No es un
+  error: OpenAlex, Semantic Scholar y Crossref indexan corpus distintos y
+  PaperLens enseña las tres en lugar de elegir una.
+- **Un aviso rojo si el artículo está retractado.** Pruébalo con el último DOI
+  de la tabla. Que no aparezca no garantiza lo contrario: significa que ninguna
+  fuente se pronunció.
+- Volumen y páginas, idioma, disponibilidad (si se puede leer sin suscripción),
+  palabras clave y la evolución de citas año a año.
 - Casillas que dicen «Información no disponible». Tampoco es un error: cuando
   una fuente no publica un dato, se dice en vez de rellenarlo.
 
@@ -141,14 +147,14 @@ facilidad. Espera unos segundos. Si molesta, pide una clave gratuita en
 `SEMANTIC_SCHOLAR_API_KEY`.
 
 **«No encontramos información suficiente»**
-Ese DOI no está indexado en ninguna de las dos fuentes. Pasa con DOIs muy
+Ese DOI no está indexado en ninguna de las tres fuentes. Pasa con DOIs muy
 nuevos o muy antiguos. Prueba otro de la tabla de arriba.
 
 **`npx supabase start` falla**
 Docker Desktop tiene que estar **arrancado**, no solo instalado. Compruébalo
 con `docker info`.
 
-**Añadiste la base de datos después y falta alguna tabla**
+**Falta alguna tabla o columna**
 `npx supabase start` solo aplica las migraciones cuando **crea** la base. Sobre
 una que ya existía:
 

@@ -9,7 +9,7 @@ impacto — obtenidos de APIs académicas públicas.
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
 > **Estado: fases 0–10 completadas.** Introduces un DOI, se consultan
-> Semantic Scholar y OpenAlex en paralelo y se fusionan sus datos, puedes
+> OpenAlex, Semantic Scholar y Crossref en paralelo y se fusionan sus datos, puedes
 > guardar el resultado en tu biblioteca, subir el PDF, interpretarlo con IA y
 > comparar varios artículos entre sí y ver estadísticas de toda la biblioteca.
 > Analizar funciona sin base de datos y sin clave de IA: ambas son opcionales.
@@ -106,8 +106,8 @@ La aplicación queda en http://localhost:3000.
 ## Environment Variables
 
 Ver [`.env.example`](./.env.example). **El MVP arranca sin ninguna clave:**
-Semantic Scholar y OpenAlex permiten acceso anónimo con límites de tasa
-menores, y Crossref solo pide un email de contacto.
+Las tres fuentes permiten acceso anónimo con límites de tasa menores; OpenAlex
+y Crossref los amplían si indicas un email de contacto.
 
 Las claves privadas se usan exclusivamente en el servidor y nunca llegan al
 navegador.
@@ -151,7 +151,7 @@ Además:
   Journal Impact Factor pero sobre otro corpus: no son el JIF de Clarivate.
   El CiteScore y el JIF requieren suscripción y no están integrados.
 - **Las cifras de citas no coinciden entre fuentes** porque indexan corpus
-  distintos. PaperLens muestra ambas con su procedencia en lugar de elegir una.
+  distintos. PaperLens muestra las tres con su procedencia en lugar de elegir una.
 - **Los artículos retractados se avisan** en la parte superior de la ficha,
   cuando alguna fuente lo declara. Que no aparezca el aviso no garantiza lo
   contrario: significa que ninguna fuente se pronunció.

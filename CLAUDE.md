@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–10 completadas.** El roadmap del plan está cubierto salvo la autenticación y el despliegue. Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), varios artículos guardados pueden compararse entre sí, y `/statistics` agrega la biblioteca completa. La Fase 6 está bloqueada (ver abajo).
+**Fases 0–10 completadas.** El roadmap del plan está cubierto salvo la autenticación y el despliegue. Se introduce un DOI, se consultan OpenAlex, Semantic Scholar y Crossref en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), varios artículos guardados pueden compararse entre sí, y `/statistics` agrega la biblioteca completa.
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -217,7 +217,7 @@ Cada fallo tiene un mensaje concreto y accionable: DOI inválido ("No pudimos id
 
 ## Variables de entorno
 
-La plantilla versionada es `.env.example`; la copia real es `.env.local` (ignorada por git). El MVP arranca **sin ninguna clave** — Semantic Scholar y OpenAlex permiten acceso anónimo con límites de tasa menores, y Crossref solo pide un email de contacto. Rellenar cada bloque al llegar a su fase.
+La plantilla versionada es `.env.example`; la copia real es `.env.local` (ignorada por git). El MVP arranca **sin ninguna clave** — las tres fuentes permiten acceso anónimo; OpenAlex y Crossref solo piden un email de contacto para dar mejores límites de tasa. Rellenar cada bloque al llegar a su fase.
 
 Las claves privadas se usan solo en el servidor: las llamadas a APIs académicas y al LLM nunca salen del navegador.
 
