@@ -41,15 +41,19 @@ Sin ese paso, el cuartil y el SJR aparecen como no disponibles y todo lo demás 
 
 Ninguna manda sobre la otra, y por eso se consultan las dos. La lógica de fusión está en `lib/normalization/merge.ts`; cada regla responde a un fallo observado:
 
-| | OpenAlex | Semantic Scholar |
-|---|---|---|
-| Instituciones y países | sí, con ROR y código ISO | **nunca** (`affiliations` llega vacío) |
-| Tópicos | específicos ("Neural Networks and Applications") | amplios ("Computer Science") |
-| Abstract | sí, como índice invertido | a menudo ausente |
-| Editorial | sí | rara vez |
-| Nombres de autor | correctos | **mutila los no ASCII** ("Jrgen" por "Jürgen") |
-| Venue | a veces ausente | sí |
-| Título | **a veces truncado** ("Optuna") | completo |
+| | OpenAlex | Semantic Scholar | Crossref |
+|---|---|---|---|
+| Instituciones y países | sí, con ROR y código ISO | **nunca** (`affiliations` llega vacío) | instituciones en texto libre, sin país |
+| Tópicos | específicos ("Neural Networks and Applications") | amplios ("Computer Science") | categorías del editor |
+| Abstract | sí, como índice invertido | a menudo ausente | a veces, en JATS XML |
+| Editorial | sí | rara vez | **autoritativa** (registra el DOI) |
+| Nombres de autor | correctos | **mutila los no ASCII** ("Jrgen" por "Jürgen") | correctos |
+| Venue | a veces ausente | sí | sí |
+| Título | **a veces truncado** ("Optuna") | completo | completo |
+| Volumen y páginas | sí | no | sí |
+| Retractación | `is_retracted` | no | no |
+| Citas por año | sí | no | no |
+| Palabras clave | sí | no | no |
 
 Consecuencias en el código, todas con test:
 
@@ -57,9 +61,17 @@ Consecuencias en el código, todas con test:
 - **Autores: se emparejan por posición de firma.** Es lo único comparable: los identificadores son propios de cada fuente y los nombres pueden venir mutilados, así que no sirven como clave.
 - **Basta con que una fuente responda.** `10.1038/nature14539` existe en OpenAlex y no en Semantic Scholar: consultar ambas amplía la cobertura, no solo enriquece.
 
-### Las citas no coinciden, y se enseñan las dos
+### El aviso de retractación
 
-Para el mismo artículo, OpenAlex dice 101.683 citas y Semantic Scholar 109.793; en otro, 8.220 frente a 11.493. Indexan corpus distintos y **ninguna cifra es la verdadera**. Por eso `Paper` tiene `citationCounts: SourcedCount[]` además del `citationCount` principal, y la tarjeta de métricas muestra el desglose cuando discrepan. No elegir una en silencio.
+`Paper.isRetracted` viene de OpenAlex. Es el dato más importante que puede traer una ficha —citar un artículo retractado en una tesis es un error grave— así que se muestra arriba del todo, con el único color de alarma de la aplicación.
+
+Dos reglas: al fusionar, **basta con que una fuente lo marque** para que se muestre (perder el aviso porque la otra no se pronuncia sería lo peor que podría pasar); y `undefined` significa "ninguna fuente se pronunció", que **no** es lo mismo que "no está retractado", por lo que no se muestra nada tranquilizador en ese caso.
+
+Caso real de prueba: `10.1016/S0140-6736(97)11096-0` (el artículo de Wakefield sobre MMR, retractado por The Lancet).
+
+### Las citas no coinciden, y se enseñan las tres
+
+Para el mismo artículo, OpenAlex dice 2.961 citas, Semantic Scholar 1.875 y Crossref 2.008. Indexan corpus distintos —Crossref solo cuenta lo depositado en Crossref— y **ninguna cifra es la verdadera**. Por eso `Paper` tiene `citationCounts: SourcedCount[]` además del `citationCount` principal, y la tarjeta de métricas muestra el desglose cuando discrepan. No elegir una en silencio.
 
 ### Límites de tasa
 

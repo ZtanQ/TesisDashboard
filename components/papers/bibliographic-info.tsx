@@ -22,7 +22,33 @@ function Row({ label, value }: { label: string; value?: string | number }) {
   );
 }
 
+const ACCESO: Record<string, string> = {
+  gold: "Acceso abierto (gold: publicado en revista abierta)",
+  green: "Acceso abierto (green: copia en repositorio)",
+  hybrid: "Acceso abierto (hybrid: abierto en revista de suscripción)",
+  bronze: "Legible en la web del editor, sin licencia abierta declarada",
+  diamond: "Acceso abierto (diamond: sin cargos para autor ni lector)",
+  closed: "Requiere suscripción o pago",
+};
+
+/** "9 (8), 1735–1780" */
+function paginacion(paper: Paper): string | undefined {
+  const b = paper.biblio;
+  if (!b) return undefined;
+  const partes: string[] = [];
+  if (b.volume) partes.push(b.issue ? `${b.volume} (${b.issue})` : b.volume);
+  if (b.firstPage) {
+    partes.push(b.lastPage ? `${b.firstPage}–${b.lastPage}` : b.firstPage);
+  }
+  return partes.length > 0 ? partes.join(", ") : undefined;
+}
+
 export function BibliographicInfo({ paper }: { paper: Paper }) {
+  const idioma = paper.language
+    ? (new Intl.DisplayNames(["es"], { type: "language" }).of(paper.language) ??
+      paper.language)
+    : undefined;
+
   return (
     <dl>
       <Row label="Revista / congreso" value={paper.venue} />
@@ -34,6 +60,14 @@ export function BibliographicInfo({ paper }: { paper: Paper }) {
         }
       />
       <Row label="Fecha de publicación" value={paper.publicationDate} />
+      <Row label="Volumen y páginas" value={paginacion(paper)} />
+      <Row label="Idioma" value={idioma} />
+      <Row
+        label="Disponibilidad"
+        value={
+          paper.openAccessStatus ? ACCESO[paper.openAccessStatus] : undefined
+        }
+      />
       <Row label="DOI" value={paper.doi} />
     </dl>
   );

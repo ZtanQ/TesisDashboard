@@ -170,6 +170,13 @@ export async function savePaper(
           url: nullable(paper.urls.paper),
           open_access_url: nullable(paper.urls.pdf),
           venue_issn: nullable(paper.venueIssn),
+          keywords: paper.keywords,
+          is_retracted: nullable(paper.isRetracted),
+          language: nullable(paper.language),
+          biblio: paper.biblio ?? null,
+          open_access_status: nullable(paper.openAccessStatus),
+          citations_by_year: paper.citationsByYear ?? [],
+          external_ids: paper.externalIds ?? null,
           citation_count: nullable(paper.citationCount),
           reference_count: nullable(paper.referenceCount),
           citation_counts: paper.citationCounts ?? [],
@@ -297,6 +304,13 @@ interface PaperRow {
   }[];
   paper_topics?: { topics: { name: string } | null }[];
   venue_issn: string | null;
+  keywords: string[] | null;
+  is_retracted: boolean | null;
+  language: string | null;
+  biblio: unknown;
+  open_access_status: string | null;
+  citations_by_year: unknown;
+  external_ids: unknown;
   metrics?: {
     source: string;
     year: number;
@@ -314,6 +328,8 @@ interface PaperRow {
 const PAPER_SELECT = [
   "id, doi, title, abstract, year, publication_date, venue, publisher",
   "publication_type, url, open_access_url, venue_issn",
+  "keywords, is_retracted, language, biblio, open_access_status",
+  "citations_by_year, external_ids",
   "citation_count, reference_count",
   "citation_counts, reference_counts, sources, created_at",
   "paper_authors ( author_position, authors ( external_id, name, orcid ) )",
@@ -383,6 +399,18 @@ function rowToPaper(row: PaperRow): Paper {
     topics: (row.paper_topics ?? [])
       .filter((link) => link.topics !== null)
       .map((link) => link.topics!.name),
+    keywords: row.keywords ?? [],
+    isRetracted: row.is_retracted ?? undefined,
+    language: optional(row.language),
+    biblio: (row.biblio as Paper["biblio"]) ?? undefined,
+    openAccessStatus:
+      (optional(row.open_access_status) as Paper["openAccessStatus"]) ??
+      undefined,
+    citationsByYear:
+      (row.citations_by_year as Paper["citationsByYear"])?.length
+        ? (row.citations_by_year as Paper["citationsByYear"])
+        : undefined,
+    externalIds: (row.external_ids as Paper["externalIds"]) ?? undefined,
     citationCount: optional(row.citation_count),
     referenceCount: optional(row.reference_count),
     citationCounts: row.citation_counts?.length ? row.citation_counts : undefined,

@@ -49,6 +49,7 @@ function paperDePrueba(overrides: Partial<Paper> = {}): Paper {
     ],
     countries: ["PE", "ES"],
     topics: ["Educación", "Metodología"],
+    keywords: ["educación", "prueba"],
     citationCount: 42,
     referenceCount: 17,
     citationCounts: [

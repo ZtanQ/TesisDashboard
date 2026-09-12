@@ -65,6 +65,8 @@ export interface OpenAlexWork {
   open_access?: {
     is_oa?: boolean | null;
     oa_url?: string | null;
+    /** "gold" | "green" | "hybrid" | "bronze" | "diamond" | "closed" */
+    oa_status?: string | null;
   } | null;
   authorships?: OpenAlexAuthorship[] | null;
   topics?: OpenAlexTopic[] | null;
@@ -76,6 +78,16 @@ export interface OpenAlexWork {
    */
   abstract_inverted_index?: Record<string, number[]> | null;
   is_retracted?: boolean | null;
+  language?: string | null;
+  biblio?: {
+    volume?: string | null;
+    issue?: string | null;
+    first_page?: string | null;
+    last_page?: string | null;
+  } | null;
+  keywords?: { display_name?: string | null }[] | null;
+  ids?: Record<string, string> | null;
+  counts_by_year?: { year?: number | null; cited_by_count?: number | null }[] | null;
 }
 
 export type OpenAlexError = "not-found" | "rate-limited" | "unavailable";

@@ -151,6 +151,8 @@ export function normalizeSemanticScholarPaper(
     institutions,
     countries,
     topics: normalizeTopics(raw),
+    // Semantic Scholar no publica palabras clave.
+    keywords: [],
     citationCount,
     referenceCount,
     // Se declara con su fuente porque las fuentes no coinciden entre si.

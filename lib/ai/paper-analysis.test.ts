@@ -25,6 +25,7 @@ function paper(overrides: Partial<Paper> = {}): Paper {
     institutions: [],
     countries: [],
     topics: [],
+    keywords: [],
     urls: {},
     source: [],
     ...overrides,

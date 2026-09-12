@@ -3,6 +3,8 @@ import type { PaperErrorCode } from "@/lib/errors";
 import { normalizeDoi } from "@/lib/doi";
 import { fetchPaperByDoi } from "@/lib/academic/semantic-scholar";
 import { fetchSourceByIssn, fetchWorkByDoi } from "@/lib/academic/openalex";
+import { fetchWorkByDoi as fetchCrossrefWork } from "@/lib/academic/crossref";
+import { normalizeCrossrefWork } from "@/lib/normalization/crossref";
 import { normalizeSemanticScholarPaper } from "@/lib/normalization/semantic-scholar";
 import { normalizeOpenAlexWork } from "@/lib/normalization/openalex";
 import { mergePapers } from "@/lib/normalization/merge";
@@ -69,9 +71,10 @@ export async function getPaperByDoi(input: string): Promise<PaperResult> {
   const doi = normalizeDoi(input);
   if (!doi) return { ok: false, error: "invalid-doi" };
 
-  const [openAlex, semanticScholar] = await Promise.all([
+  const [openAlex, semanticScholar, crossref] = await Promise.all([
     fetchWorkByDoi(doi),
     fetchPaperByDoi(doi),
+    fetchCrossrefWork(doi),
   ]);
 
   const fromOpenAlex = openAlex.ok
@@ -80,14 +83,23 @@ export async function getPaperByDoi(input: string): Promise<PaperResult> {
   const fromSemanticScholar = semanticScholar.ok
     ? normalizeSemanticScholarPaper(semanticScholar.paper, doi)
     : null;
+  const fromCrossref = crossref.ok
+    ? normalizeCrossrefWork(crossref.work, doi)
+    : null;
 
   // OpenAlex va primero porque es el mas completo en lo estructural
   // (instituciones, paises, topicos, nombres); Semantic Scholar rellena lo
   // que le falta, sobre todo el venue y el titulo cuando OpenAlex lo trunca.
-  const fusionado =
-    fromOpenAlex && fromSemanticScholar
-      ? mergePapers(fromOpenAlex, fromSemanticScholar)
-      : (fromOpenAlex ?? fromSemanticScholar);
+  // Se fusionan en orden de preferencia: OpenAlex manda en lo estructural,
+  // Semantic Scholar corrige titulo y venue, y Crossref —el registro del
+  // editor— aporta editorial, volumen, paginas y su propio recuento de citas.
+  const vistas = [fromOpenAlex, fromSemanticScholar, fromCrossref].filter(
+    (v): v is NonNullable<typeof v> => v !== null,
+  );
+  const fusionado = vistas.reduce<typeof vistas[number] | null>(
+    (acumulado, vista) => (acumulado ? mergePapers(acumulado, vista) : vista),
+    null,
+  );
 
   if (fusionado) {
     const metrics = await journalMetrics(fusionado.venueIssn);
@@ -99,7 +111,7 @@ export async function getPaperByDoi(input: string): Promise<PaperResult> {
 
   // Ninguna respondio: el motivo mas informativo manda. Que una fuente no
   // tenga el articulo es menos grave que no haber podido preguntar.
-  const errors = [openAlex, semanticScholar]
+  const errors = [openAlex, semanticScholar, crossref]
     .filter((result) => !result.ok)
     .map((result) => (result as { error: string }).error);
 

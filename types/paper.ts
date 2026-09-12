@@ -26,6 +26,37 @@ export interface SourcedCount {
   count: number;
 }
 
+/** Estado de acceso abierto, tal como lo clasifica OpenAlex. */
+export type OpenAccessStatus =
+  | "gold"
+  | "green"
+  | "hybrid"
+  | "bronze"
+  | "diamond"
+  | "closed";
+
+/** Localizacion del articulo dentro de la publicacion. */
+export interface Biblio {
+  volume?: string;
+  issue?: string;
+  firstPage?: string;
+  lastPage?: string;
+}
+
+/** Citas recibidas en un anio concreto. */
+export interface CitationsPerYear {
+  year: number;
+  count: number;
+}
+
+/** Identificadores del articulo en otros repositorios. */
+export interface ExternalIds {
+  pubmed?: string;
+  arxiv?: string;
+  openalex?: string;
+  semanticScholar?: string;
+}
+
 export type PublicationType =
   | "journal-article"
   | "conference-paper"
@@ -70,8 +101,35 @@ export interface Paper {
   topics: string[];
 
   /** Recuento principal, el de la fuente preferida para este articulo. */
+  /**
+   * Si el articulo esta retractado segun la fuente.
+   *
+   * Es el dato mas importante que puede traer una ficha: citar un articulo
+   * retractado en una tesis es un error grave. `undefined` significa que
+   * ninguna fuente se pronuncio, que no es lo mismo que "no lo esta".
+   */
+  isRetracted?: boolean;
+
+  /** Codigo de idioma ISO 639-1 declarado por la fuente. */
+  language?: string;
+
+  /** Volumen, numero y paginas: hacen falta para citar el articulo. */
+  biblio?: Biblio;
+
+  /** Disponibilidad: si se puede leer sin suscripcion y bajo que modalidad. */
+  openAccessStatus?: OpenAccessStatus;
+
+  /** Palabras clave declaradas por las fuentes. */
+  keywords: string[];
+
   citationCount?: number;
   referenceCount?: number;
+
+  /** Citas recibidas anio por anio, cuando la fuente las desglosa. */
+  citationsByYear?: CitationsPerYear[];
+
+  /** Identificadores en otros repositorios, para poder contrastar. */
+  externalIds?: ExternalIds;
 
   /** Todos los recuentos obtenidos, uno por fuente. Puede haber uno solo. */
   citationCounts?: SourcedCount[];

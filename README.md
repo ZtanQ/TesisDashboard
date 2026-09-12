@@ -72,7 +72,7 @@ El sistema distingue siempre entre **datos obtenidos** de una fuente y
 | ---------------- | ---- | ---------------------------------------------- |
 | Semantic Scholar | 2    | Venue, título completo, citas; complementa a OpenAlex |
 | OpenAlex         | 5    | Instituciones, países, tópicos, abstract, editorial |
-| Crossref         | 5+   | Metadatos de DOI                                |
+| Crossref         | 5+   | Registro del editor: volumen, páginas, editorial |
 | Scopus · IEEE · WoS | futura | Solo si se dispone de acceso adecuado        |
 
 Ninguna fuente distinta de Semantic Scholar es requisito para que el sistema
@@ -152,6 +152,9 @@ Además:
   El CiteScore y el JIF requieren suscripción y no están integrados.
 - **Las cifras de citas no coinciden entre fuentes** porque indexan corpus
   distintos. PaperLens muestra ambas con su procedencia en lugar de elegir una.
+- **Los artículos retractados se avisan** en la parte superior de la ficha,
+  cuando alguna fuente lo declara. Que no aparezca el aviso no garantiza lo
+  contrario: significa que ninguna fuente se pronunció.
 - **El análisis por IA es una interpretación, no un dato.** Se muestra en un
   bloque aparte y marcado. Cuando el texto analizado no dice algo, lo declara
   en lugar de completarlo. Se basa en el título, el abstract y los metadatos:

@@ -174,6 +174,27 @@ export function mergePapers(preferred: Paper, secondary: Paper): Paper {
     institutions,
     countries: mergeNames(preferred.countries, secondary.countries),
     topics: mergeNames(preferred.topics, secondary.topics),
+    keywords: mergeNames(preferred.keywords, secondary.keywords),
+    // Que una fuente lo marque como retractado basta: es un aviso, y
+    // perderlo porque la otra no se pronuncia seria lo peor que podria pasar.
+    isRetracted:
+      preferred.isRetracted === true || secondary.isRetracted === true
+        ? true
+        : first(preferred.isRetracted, secondary.isRetracted),
+    language: first(preferred.language, secondary.language),
+    biblio: first(preferred.biblio, secondary.biblio),
+    openAccessStatus: first(
+      preferred.openAccessStatus,
+      secondary.openAccessStatus,
+    ),
+    citationsByYear: first(
+      preferred.citationsByYear,
+      secondary.citationsByYear,
+    ),
+    externalIds:
+      preferred.externalIds || secondary.externalIds
+        ? { ...secondary.externalIds, ...preferred.externalIds }
+        : undefined,
     // El recuento principal es el de la fuente preferida, pero se conservan
     // todos: difieren entre si y la interfaz enseña la discrepancia.
     citationCount: first(preferred.citationCount, secondary.citationCount),

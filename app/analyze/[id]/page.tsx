@@ -11,7 +11,9 @@ import { Abstract } from "@/components/papers/abstract-section";
 import { SourceLinks } from "@/components/papers/source-links";
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { JournalMetrics } from "@/components/papers/journal-metrics";
+import { RetractionNotice } from "@/components/papers/retraction-notice";
 import { CountriesBar } from "@/components/charts/countries-bar";
+import { YearColumns } from "@/components/charts/year-columns";
 import { Section } from "@/components/ui/section";
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { SaveButton } from "@/components/papers/save-button";
@@ -78,6 +80,8 @@ export default async function AnalyzePage({
         ) : null}
       </div>
 
+      <RetractionNotice isRetracted={paper.isRetracted} />
+
       <div className="mt-8">
         <PaperHeader paper={paper} />
       </div>
@@ -88,6 +92,21 @@ export default async function AnalyzePage({
           El cuartil corresponde a la revista, no al artículo.
         </p>
       </div>
+
+      {paper.citationsByYear && paper.citationsByYear.length > 0 ? (
+        <Section
+          title="Citas por año"
+          hint="Según OpenAlex. El año en curso está incompleto."
+        >
+          <YearColumns
+            data={paper.citationsByYear.map((entrada) => ({
+              label: String(entrada.year),
+              count: entrada.count,
+            }))}
+            emptyMessage="La fuente no desglosa las citas por año."
+          />
+        </Section>
+      ) : null}
 
       <Section title="Información bibliográfica">
         <BibliographicInfo paper={paper} />
@@ -114,6 +133,13 @@ export default async function AnalyzePage({
 
       <Section title="Tópicos">
         <TopicsList topics={paper.topics} />
+      </Section>
+
+      <Section
+        title="Palabras clave"
+        hint="Tal como las declaran las fuentes; no son los tópicos."
+      >
+        <TopicsList topics={paper.keywords} />
       </Section>
 
       <Section title="Abstract">

@@ -3,7 +3,13 @@ import type {
   OpenAlexWork,
 } from "@/lib/academic/openalex";
 import type { Author, Institution } from "@/types/author";
-import type { Paper, PublicationType } from "@/types/paper";
+import type {
+  Biblio,
+  CitationsPerYear,
+  OpenAccessStatus,
+  Paper,
+  PublicationType,
+} from "@/types/paper";
 
 /**
  * Convierte una obra de OpenAlex al modelo interno.
@@ -137,6 +143,26 @@ function collectInstitutions(authors: Author[]): Institution[] {
   return institutions;
 }
 
+const ESTADOS_OA: OpenAccessStatus[] = [
+  "gold",
+  "green",
+  "hybrid",
+  "bronze",
+  "diamond",
+  "closed",
+];
+
+function openAccessStatus(valor?: string | null): OpenAccessStatus | undefined {
+  const estado = text(valor)?.toLowerCase();
+  return ESTADOS_OA.find((e) => e === estado);
+}
+
+/** "https://pubmed.ncbi.nlm.nih.gov/9377276" -> "9377276" */
+function ultimoSegmento(url?: string | null): string | undefined {
+  const valor = text(url);
+  return valor?.split("/").filter(Boolean).pop();
+}
+
 export function normalizeOpenAlexWork(
   work: OpenAlexWork,
   requestedDoi: string,
@@ -183,8 +209,43 @@ export function normalizeOpenAlexWork(
     topics: (work.topics ?? [])
       .map((topic) => text(topic.display_name))
       .filter((topic): topic is string => Boolean(topic)),
+    // Lo declara la fuente; `undefined` seria "no se pronuncia", que no es lo
+    // mismo que "no esta retractado".
+    isRetracted:
+      typeof work.is_retracted === "boolean" ? work.is_retracted : undefined,
+    language: text(work.language),
+    biblio: ((): Biblio | undefined => {
+      const b: Biblio = {
+        volume: text(work.biblio?.volume),
+        issue: text(work.biblio?.issue),
+        firstPage: text(work.biblio?.first_page),
+        lastPage: text(work.biblio?.last_page),
+      };
+      return Object.values(b).some(Boolean) ? b : undefined;
+    })(),
+    openAccessStatus: openAccessStatus(work.open_access?.oa_status),
+    keywords: (work.keywords ?? [])
+      .map((k) => text(k.display_name))
+      .filter((k): k is string => Boolean(k)),
     citationCount,
     referenceCount,
+    citationsByYear: ((): CitationsPerYear[] | undefined => {
+      const serie = (work.counts_by_year ?? [])
+        .map((c) => ({ year: count(c.year), count: count(c.cited_by_count) }))
+        .filter(
+          (c): c is CitationsPerYear =>
+            c.year !== undefined && c.count !== undefined,
+        )
+        .sort((a, b) => a.year - b.year);
+      return serie.length > 0 ? serie : undefined;
+    })(),
+    externalIds: ((): Paper["externalIds"] => {
+      const ids = {
+        pubmed: ultimoSegmento(work.ids?.["pmid"]),
+        openalex: ultimoSegmento(work.ids?.["openalex"]),
+      };
+      return Object.values(ids).some(Boolean) ? ids : undefined;
+    })(),
     citationCounts:
       citationCount === undefined
         ? undefined
