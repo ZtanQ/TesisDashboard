@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–3 completadas.** La aplicación consulta Semantic Scholar de verdad: se introduce un DOI y sale un dashboard con datos reales, y la capa de normalización está cerrada y cubierta por tests. No hay base de datos ni biblioteca todavía. La siguiente es la Fase 4 (Supabase) o la 5 (OpenAlex).
+**Fases 0–4 completadas.** Se introduce un DOI, sale un dashboard con datos reales de Semantic Scholar, y el artículo puede guardarse en una biblioteca persistente. La siguiente es la Fase 5 (OpenAlex), que llenaría instituciones, países y tópicos finos.
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -22,6 +22,24 @@ Importa porque define qué secciones del dashboard salen vacías hoy y qué debe
 ### Límite de tasa
 
 Sin `SEMANTIC_SCHOLAR_API_KEY` se usa el pool anónimo, que devuelve **429 con facilidad** (ocurre en uso normal, no solo bajo carga). Por eso tiene su propio código de error y su propio mensaje, en vez de mezclarse con "fuente caída". Las consultas se cachean una hora con `next: { revalidate: 3600 }` para aliviarlo.
+
+### La biblioteca es opcional
+
+**Analizar funciona sin base de datos.** `getSupabase()` devuelve `null` cuando faltan credenciales y cada operación responde `not-configured`; el dashboard oculta el botón de guardar y `/library` explica qué configurar. Verificado con la base apagada: analizar sigue dando 200. No romper esto — es lo que permite clonar el repo y usarlo al momento.
+
+Para levantar la base en local: `npx supabase start` arranca la pila en Docker, aplica `supabase/migrations/0001_init.sql` solo, e imprime `API_URL` y `SERVICE_ROLE_KEY` para copiar a `.env.local`. En Supabase en la nube, la migración se pega en el SQL Editor.
+
+### Cómo se guarda un artículo
+
+Un `Paper` se reparte en ocho tablas (`lib/database/papers.ts`). Tres decisiones que conviene no deshacer:
+
+- **El DOI es la identidad.** Guardar usa `upsert` sobre `doi`: reanalizar un artículo lo actualiza en lugar de duplicarlo.
+- **Las tablas de unión se rehacen enteras** en cada guardado. Es la única forma de que desaparezcan los vínculos que la fuente ya no reporta.
+- **Autores, instituciones y tópicos se reutilizan** entre artículos, buscando primero por `external_id` y si no por nombre sin distinguir mayúsculas.
+
+`NULL` en la base significa "la fuente no lo dice" y `0` significa cero: hay un test que comprueba que esa distinción sobrevive al ir y volver de la base.
+
+Los tests de `lib/database/` son de integración contra una base real y **se saltan solos si no responde**, así que `npm test` pasa sin Docker. Con `npx supabase start` levantado, se ejecutan.
 
 ### Cómo se añade una fuente
 
@@ -59,6 +77,8 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS v4. Ba
 
 ```bash
 npm run dev            # servidor de desarrollo en localhost:3000
+npx supabase start     # base de datos local en Docker (para la biblioteca)
+npx supabase stop      # apagarla
 npm run build          # build de producción
 npm run lint           # ESLint (incluye las reglas de arquitectura)
 npm run typecheck      # next typegen && tsc --noEmit

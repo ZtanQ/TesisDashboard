@@ -13,6 +13,8 @@ import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { CountriesBar } from "@/components/charts/countries-bar";
 import { Section } from "@/components/ui/section";
 import { ErrorNotice } from "@/components/ui/error-notice";
+import { SaveButton } from "@/components/papers/save-button";
+import { getSavedPaper } from "@/lib/database/papers";
 
 export default async function AnalyzePage({
   params,
@@ -44,14 +46,25 @@ export default async function AnalyzePage({
 
   const { paper } = result;
 
+  // Si la base de datos no esta configurada no hay biblioteca, y el boton de
+  // guardar simplemente no aparece: analizar sigue funcionando sin ella.
+  const saved = paper.doi ? await getSavedPaper(paper.doi) : null;
+  const libraryAvailable = saved?.ok === true;
+  const isSaved = saved?.ok === true && saved.data !== null;
+
   return (
     <main className="mx-auto w-full min-w-0 max-w-3xl flex-1 px-6 py-12">
-      <Link
-        href="/"
-        className="text-sm text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
-      >
-        ← Nuevo análisis
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Link
+          href="/"
+          className="text-sm text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
+        >
+          ← Nuevo análisis
+        </Link>
+        {libraryAvailable && paper.doi ? (
+          <SaveButton doi={paper.doi} isSaved={isSaved} />
+        ) : null}
+      </div>
 
       <div className="mt-8">
         <PaperHeader paper={paper} />

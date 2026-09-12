@@ -43,6 +43,15 @@ export default function Home() {
         </ul>
       </section>
 
+      <p className="mt-8">
+        <Link
+          href="/library"
+          className="text-sm text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-300"
+        >
+          Ver mi biblioteca →
+        </Link>
+      </p>
+
       <p className="mt-10 text-xs text-zinc-400 dark:text-zinc-500">
         Los datos provienen de Semantic Scholar. Las instituciones, los países y
         el cuartil todavía no están disponibles: los aportará OpenAlex más

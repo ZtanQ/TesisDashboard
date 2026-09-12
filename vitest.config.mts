@@ -3,11 +3,17 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   resolve: {
-    // Mismo alias que tsconfig, para que los tests importen como el resto.
-    alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
+    alias: {
+      // Mismo alias que tsconfig, para que los tests importen como el resto.
+      "@": fileURLToPath(new URL(".", import.meta.url)),
+      "server-only": fileURLToPath(
+        new URL("./test/server-only-stub.ts", import.meta.url),
+      ),
+    },
   },
   test: {
     environment: "node",
+    setupFiles: ["./test/setup.ts"],
     include: ["lib/**/*.test.ts", "types/**/*.test.ts"],
   },
 });

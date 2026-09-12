@@ -8,8 +8,9 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 3 completada.** Introduces un DOI y obtienes un dashboard con
-> datos reales de Semantic Scholar. Todavía no hay base de datos ni biblioteca.
+> **Estado: Fase 4 completada.** Introduces un DOI, obtienes un dashboard con
+> datos reales de Semantic Scholar y puedes guardarlo en tu biblioteca.
+> Analizar funciona sin base de datos; solo la biblioteca la necesita.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.
 > El roadmap completo está en [`Plan.md`](./Plan.md).
@@ -84,6 +85,16 @@ cp .env.example .env.local
 npm run dev
 ```
 
+La aplicación funciona ya: analizar un DOI no necesita ninguna configuración.
+Para usar la biblioteca hace falta una base de datos, con dos opciones:
+
+```bash
+npx supabase start   # pila local en Docker: aplica la migración e imprime las claves
+```
+
+o crear un proyecto en supabase.com, ejecutar `supabase/migrations/0001_init.sql`
+en su SQL Editor y copiar la URL y la service role key a `.env.local`.
+
 La aplicación queda en http://localhost:3000.
 
 ## Environment Variables
@@ -103,7 +114,7 @@ npm run build      # build de producción
 npm run start      # servir el build
 npm run lint       # ESLint (incluye las reglas de arquitectura)
 npm run typecheck  # chequeo de tipos
-npm test           # tests del parseo de DOI y de la normalización
+npm test           # tests; los de base de datos se saltan si no responde
 ```
 
 Ramas: `main` ← `dev` ← `feature/<nombre>`. Commits con prefijo convencional
