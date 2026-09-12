@@ -16,6 +16,8 @@ import { ErrorNotice } from "@/components/ui/error-notice";
 import { SaveButton } from "@/components/papers/save-button";
 import { getSavedPaper } from "@/lib/database/papers";
 import { getSavedAnalysis } from "@/lib/database/analyses";
+import { getFulltext } from "@/lib/database/fulltexts";
+import { PdfUpload } from "@/components/papers/pdf-upload";
 import { isAiConfigured } from "@/lib/ai/paper-analysis";
 import { AiAnalysis } from "@/components/papers/ai-analysis";
 
@@ -58,6 +60,7 @@ export default async function AnalyzePage({
   // Un analisis ya guardado se reutiliza: cada uno cuesta una llamada de pago.
   const previousAnalysis =
     paper.doi && isSaved ? await getSavedAnalysis(paper.doi) : null;
+  const fulltext = paper.doi && isSaved ? await getFulltext(paper.doi) : null;
   const aiAvailable = isAiConfigured();
 
   return (
@@ -108,6 +111,18 @@ export default async function AnalyzePage({
       <Section title="Abstract">
         <Abstract abstract={paper.abstract} />
       </Section>
+
+      {isSaved && paper.doi ? (
+        <Section
+          title="Texto completo"
+          hint="Sube el PDF para que el análisis lea el artículo entero y no solo el abstract."
+        >
+          <PdfUpload
+            doi={paper.doi}
+            stored={fulltext?.ok ? fulltext.data : null}
+          />
+        </Section>
+      ) : null}
 
       <Section
         title="Análisis por IA"

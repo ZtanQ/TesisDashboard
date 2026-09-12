@@ -80,7 +80,7 @@ Tu única fuente es el texto que se te entrega. Reglas, en orden de importancia:
 3. Distingue lo que el artículo afirma de lo que tú concluyes. En "mainFindings" van los resultados que el propio artículo declara, no tu valoración de ellos.
 4. Cuando el texto sea escaso, di menos. Un análisis breve y fiel es mejor que uno extenso y especulativo.
 
-Normalmente recibirás solo el título, el abstract y los metadatos, no el artículo completo. Eso limita lo que puedes afirmar con fundamento: aténte a ello.`;
+Cuando solo recibas el título, el abstract y los metadatos, eso limita lo que puedes afirmar con fundamento: aténte a ello. Cuando recibas el texto completo por secciones, puedes ser más preciso, pero las reglas anteriores no cambian: lo que el artículo no diga, sigue sin decirse.`;
 
 export type AnalysisErrorCode =
   | "not-configured"
@@ -135,14 +135,21 @@ function buildPaperContext(paper: Paper): string {
 export async function analyzePaper(
   paper: Paper,
   researchTopic?: string,
+  /**
+   * Texto completo del articulo, si se subio el PDF. Cuando existe sustituye
+   * al abstract: es la diferencia entre interpretar un resumen y leer el
+   * articulo, y queda registrado en `basedOn`.
+   */
+  fullText?: string,
 ): Promise<AnalysisResult> {
   const apiKey = process.env.AI_API_KEY;
   if (!apiKey) return { ok: false, error: "not-configured" };
 
-  // Sin abstract, el modelo solo tendria el titulo: no da para un analisis
-  // honesto, y es preferible decirlo a producir una interpretacion inventada.
+  const completo = fullText?.trim();
+  // Sin abstract ni texto completo, el modelo solo tendria el titulo: no da
+  // para un analisis honesto, y es preferible decirlo a inventar uno.
   const abstract = paper.abstract?.trim() ?? "";
-  if (abstract.length < MIN_ABSTRACT_CHARS) {
+  if (!completo && abstract.length < MIN_ABSTRACT_CHARS) {
     return { ok: false, error: "insufficient-text" };
   }
 
@@ -162,7 +169,9 @@ export async function analyzePaper(
       messages: [
         {
           role: "user",
-          content: `${instruction}\n\n---\n${buildPaperContext(paper)}\n---`,
+          content: completo
+            ? `${instruction}\n\n---\n${buildPaperContext(paper)}\n\nTexto completo del artículo, por secciones:\n${completo}\n---`
+            : `${instruction}\n\n---\n${buildPaperContext(paper)}\n---`,
         },
       ],
       output_config: { format: zodOutputFormat(AnalysisSchema) },
@@ -201,7 +210,7 @@ export async function analyzePaper(
             : null,
         generatedAt: new Date().toISOString(),
         model: MODEL,
-        basedOn: "metadata+abstract",
+        basedOn: completo ? "fulltext" : "metadata+abstract",
       },
     };
   } catch (error) {

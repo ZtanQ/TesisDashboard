@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–5 y 7 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, y el artículo puede interpretarse con IA. La Fase 6 está bloqueada (ver abajo). Las siguientes disponibles son la 8 (PDF), la 9 (comparación) y la 10 (estadísticas).
+**Fases 0–5, 7 y 8 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, y el artículo puede interpretarse con IA, sobre el abstract o sobre el PDF completo si se sube. La Fase 6 está bloqueada (ver abajo). Las siguientes disponibles son la 9 (comparación) y la 10 (estadísticas).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -22,13 +22,32 @@ Opciones, ninguna elegida todavía:
 
 Hasta que se decida, la tarjeta de cuartil muestra "Ninguna fuente lo publica", que es correcto pero permanente. **No inventar un cuartil calculándolo a partir de las citas**: el plan (§19) lo prohíbe explícitamente, y sería convertir una estimación en una falsa métrica.
 
+### PDF: qué hace `lib/pdf/` y por qué así
+
+Un PDF no guarda párrafos, guarda líneas colocadas en una página. La tubería es extraer → limpiar → seccionar, y cada paso resuelve un problema medido sobre artículos reales, no supuesto:
+
+- **Palabras cortadas a final de línea.** `transduc-
+tion` hay que unirlo; `English-
+to` no. Son indistinguibles por su forma. La pista se busca **en el propio documento**: si una de las dos formas aparece en otro punto, esa es la buena. Medido sobre 16 casos reales: cuando hay evidencia acierta en los 16; cuando no la hay se conserva el guion, porque `sur-prisingly` se lee y `sequencealigned` queda corrompido. **No cambiar esto por una regla simple** — unir siempre da 9/16 y nunca unir da 7/16.
+- **Encabezados numerados cortan sección aunque no se reconozca el nombre.** Sin esa regla, `2 Background` se tragaba las secciones 3, 4 y 5 enteras y el modelo recibía un bloque de 17.000 caracteres mal etiquetado.
+- **La bibliografía se excluye** del texto que va al modelo: es la parte más voluminosa y la que menos aporta a interpretar el artículo (en una prueba real, 9.411 de 39.540 caracteres).
+- **Un encabezado sin cuerpo se conserva** (`6 Results` seguido de `6.1 …`): sitúa lo que viene después.
+
+**No se guarda el PDF, solo el texto.** Es lo que se usa después, quien lo subió ya tiene el archivo, y evita montar almacenamiento de binarios. Volver a subir reemplaza el anterior.
+
+**Un PDF escaneado se rechaza** con `no-text-layer` en lugar de analizar cuatro palabras sueltas como si fueran el artículo. Haría falta OCR, que no está implementado.
+
+`next.config.ts` sube `serverActions.bodySizeLimit` a 25 MB: el límite por defecto es 1 MB y un artículo lo pasa con facilidad. Ese número y `MAX_PDF_BYTES` en `lib/pdf/extract.ts` van juntos — si cambia uno, cambiar el otro.
+
 ### El análisis por IA: qué lo mantiene honesto
 
 `lib/ai/paper-analysis.ts`. Tres mecanismos, no uno, porque pedírselo al modelo en el prompt no basta:
 
 1. **El esquema permite `null`.** Cada campo interpretable es anulable a propósito, así que "el texto no lo dice" es una respuesta válida que el modelo puede dar sin esforzarse en inventar. Se usa salida estructurada (`client.messages.parse` con Zod), no texto libre parseado a mano.
 2. **La interfaz escribe el "no consta".** El modelo devuelve `null`; la frase "No especificada en la información analizada" la pone el componente. Misma regla de capas que en el resto: la capa de datos no produce texto de interfaz.
-3. **Guarda previa de texto suficiente.** Sin abstract (o con menos de 120 caracteres) no se llama al modelo: interpretar solo el título produce conjeturas. Devuelve `insufficient-text`.
+3. **Guarda previa de texto suficiente.** Sin abstract (o con menos de 120 caracteres) ni PDF subido no se llama al modelo: interpretar solo el título produce conjeturas. Devuelve `insufficient-text`.
+
+**Si hay PDF subido, se analiza el artículo entero** en vez del abstract, y queda registrado en `basedOn: "fulltext"`. Es la diferencia entre interpretar un resumen y leer el trabajo.
 
 **La relevancia exige un tema declarado.** Sin saber para qué investigación se pregunta, "relevancia ALTA" no significa nada: sería una opinión sin criterio, justo la falsa métrica que el plan descarta (§18). Por eso `RelevanceAssessment` incluye el `researchTopic` que la motivó — la valoración y su criterio no se guardan por separado — y sin tema el campo va a `null`.
 

@@ -5,6 +5,8 @@ import { normalizeDoi } from "@/lib/doi";
 import { getPaperByDoi } from "@/lib/paper-service";
 import { analyzePaper } from "@/lib/ai/paper-analysis";
 import { saveAnalysis } from "@/lib/database/analyses";
+import { getFulltext } from "@/lib/database/fulltexts";
+import { textoParaAnalisis } from "@/lib/pdf/sections";
 import type { PaperAnalysis } from "@/types/analysis";
 
 /**
@@ -46,7 +48,18 @@ export async function runAnalysis(
     };
   }
 
-  const result = await analyzePaper(paper.paper, researchTopic || undefined);
+  // Si se subió el PDF, se analiza el artículo entero en vez del abstract.
+  const fulltext = await getFulltext(doi);
+  const texto =
+    fulltext.ok && fulltext.data
+      ? textoParaAnalisis(fulltext.data.sections)
+      : undefined;
+
+  const result = await analyzePaper(
+    paper.paper,
+    researchTopic || undefined,
+    texto,
+  );
   if (!result.ok) {
     return {
       status: "error",
