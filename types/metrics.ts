@@ -1,5 +1,11 @@
 export type Quartile = "Q1" | "Q2" | "Q3" | "Q4";
 
+/** Cuartil de una revista en una de sus categorias tematicas. */
+export interface CategoryQuartile {
+  category: string;
+  quartile: Quartile;
+}
+
 /** Quien publica una metrica de revista. */
 export type MetricSource = "scimago" | "openalex";
 
@@ -24,14 +30,17 @@ export interface PaperMetrics {
 
   // --- SCImago ---
   quartile?: Quartile;
-  /**
-   * Categoria tematica en la que la revista alcanza ese cuartil.
-   *
-   * Importa decirlo: SCImago clasifica cada revista en varias categorias y
-   * publica un cuartil por cada una. "Q1" a secas es el mejor de todos, lo
-   * que puede dar una idea mas favorable que la real en el area que interesa.
-   */
+  /** Categoria en la que la revista alcanza su mejor cuartil. */
   quartileCategory?: string;
+  /**
+   * Cuartil en **cada** categoria, no solo el mejor.
+   *
+   * Importa enseñarlos todos. Caso real: Neural Computation es Q1 en "Arts
+   * and Humanities (miscellaneous)" y Q2 en "Cognitive Neuroscience", que es
+   * su area de verdad. Publicar solo "Q1" daria una idea equivocada en una
+   * tesis, que es justo lo que el plan quiere evitar.
+   */
+  quartilesByCategory?: CategoryQuartile[];
   sjr?: number;
 
   // --- OpenAlex ---

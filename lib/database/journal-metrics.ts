@@ -1,5 +1,5 @@
 import "server-only";
-import type { PaperMetrics } from "@/types/metrics";
+import type { CategoryQuartile, PaperMetrics } from "@/types/metrics";
 import type { Quartile } from "@/types/metrics";
 import { normalizeIssn } from "@/lib/academic/scimago";
 import { getSupabase, timedOut, withDeadline } from "@/lib/database/supabase";
@@ -33,7 +33,7 @@ export async function findScimagoMetrics(
   const response = await withDeadline(
     supabase
       .from("scimago_journals")
-      .select("year, sjr, quartile, quartile_category, h_index")
+      .select("year, sjr, quartile, quartile_category, quartiles, h_index")
       .eq("issn", normalizado)
       .order("year", { ascending: false })
       .limit(1)
@@ -47,6 +47,7 @@ export async function findScimagoMetrics(
     sjr: number | null;
     quartile: string | null;
     quartile_category: string | null;
+    quartiles: CategoryQuartile[] | null;
     h_index: number | null;
   };
 
@@ -55,6 +56,7 @@ export async function findScimagoMetrics(
     year: fila.year,
     quartile: (fila.quartile ?? undefined) as Quartile | undefined,
     quartileCategory: fila.quartile_category ?? undefined,
+    quartilesByCategory: fila.quartiles?.length ? fila.quartiles : undefined,
     sjr: fila.sjr ?? undefined,
     hIndex: fila.h_index ?? undefined,
   };

@@ -85,15 +85,49 @@ export function JournalMetrics({
           <dl className="mt-2">
             {metric.source === "scimago" ? (
               <>
-                <Fila
-                  label="Cuartil"
-                  value={metric.quartile}
-                  note={
-                    metric.quartileCategory
-                      ? `mejor cuartil, en ${metric.quartileCategory}`
-                      : undefined
-                  }
-                />
+                {metric.quartilesByCategory &&
+                metric.quartilesByCategory.length > 0 ? (
+                  <div className="border-b border-zinc-100 py-2 dark:border-zinc-900">
+                    <dt className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Cuartil por categoría
+                    </dt>
+                    <dd className="mt-1 space-y-1">
+                      {metric.quartilesByCategory.map((entrada) => (
+                        <div
+                          key={entrada.category}
+                          className="flex flex-wrap items-baseline gap-x-3 text-sm"
+                        >
+                          <span className="w-8 shrink-0 font-semibold text-zinc-900 dark:text-zinc-100">
+                            {entrada.quartile}
+                          </span>
+                          <span className="text-zinc-600 dark:text-zinc-300">
+                            {entrada.category}
+                          </span>
+                        </div>
+                      ))}
+                      {metric.quartilesByCategory.length > 1 ? (
+                        <p className="max-w-prose pt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                          SCImago resume esta revista como{" "}
+                          <strong className="font-medium">
+                            {metric.quartile}
+                          </strong>
+                          , que es su mejor cuartil. Mira la categoría que
+                          corresponda a tu área antes de citarlo.
+                        </p>
+                      ) : null}
+                    </dd>
+                  </div>
+                ) : (
+                  <Fila
+                    label="Cuartil"
+                    value={metric.quartile}
+                    note={
+                      metric.quartileCategory
+                        ? `en ${metric.quartileCategory}`
+                        : undefined
+                    }
+                  />
+                )}
                 <Fila label="SJR" value={numero(metric.sjr, 3)} />
                 <Fila
                   label="Índice h"

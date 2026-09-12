@@ -2,7 +2,12 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DataSource, Paper, SourcedCount } from "@/types/paper";
 import type { Author, Institution } from "@/types/author";
-import type { MetricSource, PaperMetrics, Quartile } from "@/types/metrics";
+import type {
+  CategoryQuartile,
+  MetricSource,
+  PaperMetrics,
+  Quartile,
+} from "@/types/metrics";
 import { getSupabase, timedOut, withDeadline } from "@/lib/database/supabase";
 
 /**
@@ -234,6 +239,7 @@ export async function savePaper(
           year: metric.year,
           quartile: nullable(metric.quartile),
           quartile_category: nullable(metric.quartileCategory),
+          quartiles_by_category: metric.quartilesByCategory ?? [],
           sjr: nullable(metric.sjr),
           h_index: nullable(metric.hIndex),
           two_year_mean_citedness: nullable(metric.twoYearMeanCitedness),
@@ -296,6 +302,7 @@ interface PaperRow {
     year: number;
     quartile: string | null;
     quartile_category: string | null;
+    quartiles_by_category: CategoryQuartile[] | null;
     sjr: number | null;
     h_index: number | null;
     two_year_mean_citedness: number | null;
@@ -312,7 +319,7 @@ const PAPER_SELECT = [
   "paper_authors ( author_position, authors ( external_id, name, orcid ) )",
   "paper_institutions ( institutions ( external_id, name, country ) )",
   "paper_topics ( topics ( name ) )",
-  "metrics ( source, year, quartile, quartile_category, sjr, h_index, two_year_mean_citedness, citescore, impact_factor )",
+  "metrics ( source, year, quartile, quartile_category, quartiles_by_category, sjr, h_index, two_year_mean_citedness, citescore, impact_factor )",
 ].join(", ");
 
 /** Reconstruye el `Paper` del dominio a partir de las filas. */
@@ -342,6 +349,9 @@ function rowToPaper(row: PaperRow): Paper {
           year: metricRow.year,
           quartile: optional(metricRow.quartile) as Quartile | undefined,
           quartileCategory: optional(metricRow.quartile_category),
+          quartilesByCategory: metricRow.quartiles_by_category?.length
+            ? metricRow.quartiles_by_category
+            : undefined,
           sjr: optional(metricRow.sjr),
           hIndex: optional(metricRow.h_index),
           twoYearMeanCitedness: optional(metricRow.two_year_mean_citedness),

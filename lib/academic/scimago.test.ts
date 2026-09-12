@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bestQuartile,
   normalizeIssn,
+  parseQuartiles,
   parseScimagoCsv,
 } from "@/lib/academic/scimago";
 
@@ -19,11 +20,27 @@ describe("ISSN", () => {
 
 describe("cuartil por categoría", () => {
   it("toma el mejor cuartil y dice en qué categoría lo alcanza", () => {
-    // Decir solo "Q1" daría una idea más favorable que la real en las demás.
     expect(bestQuartile("Education (Q2); Computer Science (Q1)")).toEqual({
       quartile: "Q1",
       category: "Computer Science",
     });
+  });
+
+  it("conserva todas las categorías, ordenadas de mejor a peor", () => {
+    // Caso real: Neural Computation es Q1 en una categoría miscelánea y Q2 en
+    // su área de verdad. Enseñar solo "Q1" induciría a error en una tesis.
+    expect(
+      parseQuartiles(
+        "Cognitive Neuroscience (Q2); Arts and Humanities (miscellaneous) (Q1)",
+      ),
+    ).toEqual([
+      { category: "Arts and Humanities (miscellaneous)", quartile: "Q1" },
+      { category: "Cognitive Neuroscience", quartile: "Q2" },
+    ]);
+  });
+
+  it("sin categorías devuelve lista vacía", () => {
+    expect(parseQuartiles(undefined)).toEqual([]);
   });
 
   it("funciona con una sola categoría", () => {

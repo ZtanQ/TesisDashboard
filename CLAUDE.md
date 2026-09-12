@@ -21,7 +21,7 @@ Cuatro cosas que no conviene deshacer:
 
 - **`Paper.metrics` es una lista, no un objeto.** Cada fuente publica cosas distintas y para años distintos; un registro único obligaría a elegir un `source` y un `year` para todas, que es lo que el plan prohíbe (§19).
 - **Las citas medias a 2 años de OpenAlex NO son el Journal Impact Factor.** Es la misma fórmula sobre otro corpus, así que se muestra con su nombre propio y nunca como "Impact Factor". Etiquetarlo mal sería atribuir a Clarivate una cifra que no es suya.
-- **El cuartil se muestra con su categoría.** SCImago clasifica cada revista en varias categorías con un cuartil por cada una y publica el mejor; decir "Q1" a secas da una idea más favorable que la real en las demás áreas, así que se muestra "Q1 — mejor cuartil, en Cognitive Neuroscience".
+- **Se muestran TODOS los cuartiles, uno por categoría, no solo el mejor.** SCImago clasifica cada revista en varias categorías y su columna resumen publica el mejor. Caso real que lo motiva: *Neural Computation* es **Q1 en «Arts and Humanities (miscellaneous)» y Q2 en «Cognitive Neuroscience»**, que es su área de verdad. Citarla como "Q1" en una tesis de neurociencia sería engañoso, así que la interfaz lista todas las categorías y avisa de mirar la propia.
 - **El emparejamiento es por ISSN, no por nombre.** Cada fuente escribe el nombre de la revista a su manera; el ISSN es el mismo. OpenAlex lo da como `issn_l` y se guarda en `Paper.venueIssn`.
 
 ### Importar el ranking de SCImago
@@ -29,7 +29,11 @@ Cuatro cosas que no conviene deshacer:
 Su web bloquea la descarga automática (Cloudflare devuelve 403), así que es un paso manual, una vez al año:
 
 1. https://www.scimagojr.com/journalrank.php → elegir año → «Download data»
-2. `npm run import:scimago -- <archivo.csv> <año>`
+2. `npm run import:scimago -- "<archivo.csv>" <año>`
+
+El volcado de 2025 son ~32.000 revistas y ~53.000 entradas (una por ISSN, porque una revista tiene papel y electrónico). Tarda alrededor de un minuto. Los CSV están en `.gitignore`: pesan 11 MB y su licencia CC BY-NC desaconseja redistribuirlos.
+
+**La importación va a la base que apunte `.env.local`.** Si se pasa de la base local a Supabase en la nube, hay que volver a importar allí.
 
 Sin ese paso, el cuartil y el SJR aparecen como no disponibles y todo lo demás funciona igual. Los datos de SCImago son CC BY-NC: atribución obligatoria si se publican resultados.
 

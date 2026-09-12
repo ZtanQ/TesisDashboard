@@ -42,3 +42,8 @@ next-env.d.ts
 
 # plantilla de entorno (sin secretos): si se commitea
 !.env.example
+
+# Volcados de SCImago: son grandes y su licencia (CC BY-NC) desaconseja
+# redistribuirlos. Se importan con `npm run import:scimago` y no se versionan.
+scimagojr*.csv
+*.scimago.csv

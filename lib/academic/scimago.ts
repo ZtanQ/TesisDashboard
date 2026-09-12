@@ -1,4 +1,4 @@
-import type { Quartile } from "@/types/metrics";
+import type { CategoryQuartile, Quartile } from "@/types/metrics";
 
 /**
  * Lectura del CSV de SCImago Journal Rank.
@@ -19,8 +19,10 @@ export interface ScimagoJournal {
   title: string;
   sjr?: number;
   quartile?: Quartile;
-  /** Categoria en la que alcanza ese cuartil. */
+  /** Categoria en la que alcanza su mejor cuartil. */
   quartileCategory?: string;
+  /** Cuartil en cada una de sus categorias. */
+  quartiles: CategoryQuartile[];
   hIndex?: number;
   country?: string;
   publisher?: string;
@@ -55,32 +57,36 @@ export function normalizeIssn(valor: string): string {
 }
 
 /**
- * Extrae cuartil y categoria de la columna "Categories".
+ * Extrae el cuartil de **cada** categoria de la columna "Categories".
  *
  * El formato es "Education (Q1); Computer Science (Q2)". SCImago clasifica
- * cada revista en varias categorias con un cuartil por cada una, asi que se
- * toma **el mejor** y se registra en que categoria lo alcanza: decir solo "Q1"
- * daria una idea mas favorable que la real en otras areas.
+ * cada revista en varias categorias con un cuartil por cada una, y solo
+ * publica el mejor en su columna resumen. Aqui se conservan todos, ordenados
+ * de mejor a peor, porque el mejor por si solo puede enganar: Neural
+ * Computation es Q1 en "Arts and Humanities (miscellaneous)" y Q2 en
+ * "Cognitive Neuroscience", que es su area real.
  */
-export function bestQuartile(
+export function parseQuartiles(
   categorias: string | undefined,
-): { quartile: Quartile; category: string } | undefined {
-  if (!categorias) return undefined;
+): CategoryQuartile[] {
+  if (!categorias) return [];
 
-  let mejor: { quartile: Quartile; category: string } | undefined;
-
+  const salida: CategoryQuartile[] = [];
   for (const parte of categorias.split(";")) {
     const m = parte.trim().match(/^(.*?)\s*\(Q([1-4])\)$/);
     if (!m) continue;
-
-    const quartile = `Q${m[2]}` as Quartile;
-    const category = m[1].trim();
-    if (!mejor || quartile < mejor.quartile) {
-      mejor = { quartile, category };
-    }
+    salida.push({ category: m[1].trim(), quartile: `Q${m[2]}` as Quartile });
   }
 
-  return mejor;
+  // Q1 primero: el orden lexicografico de "Q1".."Q4" ya es el correcto.
+  return salida.sort((a, b) => a.quartile.localeCompare(b.quartile));
+}
+
+/** El mejor cuartil y la categoria en que se alcanza. */
+export function bestQuartile(
+  categorias: string | undefined,
+): CategoryQuartile | undefined {
+  return parseQuartiles(categorias)[0];
 }
 
 /** Parte una linea CSV respetando las comillas dobles. */
@@ -146,7 +152,8 @@ export function parseScimagoCsv(
     const titulo = texto(campos[iTitulo]);
     if (!titulo) continue;
 
-    const mejor = bestQuartile(texto(campos[iCategorias]));
+    const cuartiles = parseQuartiles(texto(campos[iCategorias]));
+    const mejor = cuartiles[0];
 
     // Varios ISSN en una celda, separados por coma.
     for (const bruto of (campos[iIssn] ?? "").split(",")) {
@@ -160,6 +167,7 @@ export function parseScimagoCsv(
         sjr: numero(campos[iSjr]),
         quartile: mejor?.quartile,
         quartileCategory: mejor?.category,
+        quartiles: cuartiles,
         hIndex: entero(campos[iH]),
         country: texto(campos[iPais]),
         publisher: texto(campos[iEditor]),

@@ -139,10 +139,11 @@ herramientas de apoyo.
 
 Además:
 
-- El cuartil corresponde a la **revista**, no al artículo, y es el mejor de
-  todas sus categorías: se muestra junto a la categoría en que lo alcanza.
-  Requiere importar el ranking de SCImago (`npm run import:scimago`); sin ese
-  paso aparece como no disponible.
+- El cuartil corresponde a la **revista**, no al artículo, y depende de la
+  categoría: una revista puede ser Q1 en un área y Q2 en otra. PaperLens
+  muestra **todas** sus categorías, no solo la mejor. Requiere importar el
+  ranking de SCImago (`npm run import:scimago`); sin ese paso aparece como no
+  disponible.
 - Las **citas medias a 2 años** de OpenAlex usan la misma fórmula que el
   Journal Impact Factor pero sobre otro corpus: no son el JIF de Clarivate.
   El CiteScore y el JIF requieren suscripción y no están integrados.

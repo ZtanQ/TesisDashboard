@@ -84,6 +84,7 @@ for (let i = 0; i < filas.length; i += LOTE) {
     sjr: f.sjr ?? null,
     quartile: f.quartile ?? null,
     quartile_category: f.quartileCategory ?? null,
+    quartiles: f.quartiles ?? [],
     h_index: f.hIndex ?? null,
     country: f.country ?? null,
     publisher: f.publisher ?? null,
