@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–2 completadas.** La aplicación consulta Semantic Scholar de verdad: se introduce un DOI y sale un dashboard con datos reales. No hay base de datos ni biblioteca todavía. La siguiente es la Fase 3 (formalizar la normalización) o la 4 (Supabase), según el plan.
+**Fases 0–3 completadas.** La aplicación consulta Semantic Scholar de verdad: se introduce un DOI y sale un dashboard con datos reales, y la capa de normalización está cerrada y cubierta por tests. No hay base de datos ni biblioteca todavía. La siguiente es la Fase 4 (Supabase) o la 5 (OpenAlex).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -27,6 +27,18 @@ Sin `SEMANTIC_SCHOLAR_API_KEY` se usa el pool anónimo, que devuelve **429 con f
 
 `lib/paper-service.ts` es el único punto por el que la interfaz obtiene un artículo. Añadir OpenAlex es: un cliente en `lib/academic/`, su normalizador en `lib/normalization/`, y combinar los resultados dentro de `getPaperByDoi`. La firma (`Promise<PaperResult>`, unión discriminada) no cambia, así que ninguna página ni componente se toca.
 
+**La separación está impuesta por ESLint, no solo por convención.** `eslint.config.mjs` prohíbe que `app/` y `components/` importen de `lib/academic/` o `lib/normalization/`, y que un normalizador use `fetch`. Si un atajo rompe la arquitectura, `npm run lint` falla con el motivo.
+
+### Reglas del normalizador
+
+Un normalizador convierte la forma cruda de una fuente al tipo `Paper` y nada más. Tres cosas que debe respetar, las tres cubiertas por tests:
+
+- **Un dato ausente se queda `undefined`.** Cadena vacía o en blanco cuenta como ausente (la API devuelve `""` de verdad), pero **un cero es un dato**: un artículo con 0 citas no es un artículo sin datos de citas.
+- **No se deduce lo que la fuente no dice.** Aunque "Universidad de Lima" sugiera Perú, el país se queda vacío si la fuente no lo declara.
+- **Sin texto de interfaz.** El normalizador no produce cadenas para mostrar; de las ausencias se encarga la UI con `<Unavailable>`.
+
+Los tests viven junto al código (`lib/**/*.test.ts`). Ejecutar uno solo: `npx vitest run lib/doi.test.ts`, o por nombre: `npx vitest run -t "deduplica"`.
+
 ## Qué es PaperLens
 
 Aplicación web privada (1–2 usuarios, equipo de tesis) que recibe un **DOI** y devuelve una ficha estructurada del artículo: metadatos bibliográficos, autores, instituciones, países, tópicos, citas y métricas — obtenidos de APIs académicas, no inventados.
@@ -48,11 +60,13 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS v4. Ba
 ```bash
 npm run dev            # servidor de desarrollo en localhost:3000
 npm run build          # build de producción
-npm run lint           # ESLint
-npm run typecheck      # tsc --noEmit
+npm run lint           # ESLint (incluye las reglas de arquitectura)
+npm run typecheck      # next typegen && tsc --noEmit
+npm test               # Vitest, una pasada
+npm run test:watch     # Vitest en modo continuo
+npx vitest run lib/doi.test.ts        # un solo archivo
+npx vitest run -t "no inventa nada"   # un solo test por nombre
 ```
-
-Si se añaden tests, usar Vitest y documentar aquí el comando para ejecutar un test individual.
 
 Con Prisma (solo desde Fase 4):
 

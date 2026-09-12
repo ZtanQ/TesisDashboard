@@ -8,7 +8,7 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: Fase 2 completada.** Introduces un DOI y obtienes un dashboard con
+> **Estado: Fase 3 completada.** Introduces un DOI y obtienes un dashboard con
 > datos reales de Semantic Scholar. Todavía no hay base de datos ni biblioteca.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.
@@ -101,8 +101,9 @@ navegador.
 npm run dev        # servidor de desarrollo
 npm run build      # build de producción
 npm run start      # servir el build
-npm run lint       # ESLint
+npm run lint       # ESLint (incluye las reglas de arquitectura)
 npm run typecheck  # chequeo de tipos
+npm test           # tests del parseo de DOI y de la normalización
 ```
 
 Ramas: `main` ← `dev` ← `feature/<nombre>`. Commits con prefijo convencional

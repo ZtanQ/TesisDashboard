@@ -1,4 +1,5 @@
 import type {
+  FoundPaper,
   SemanticScholarAuthor,
   SemanticScholarPaper,
 } from "@/lib/academic/semantic-scholar";
@@ -113,7 +114,7 @@ function collectInstitutions(authors: Author[]): Institution[] {
 }
 
 export function normalizeSemanticScholarPaper(
-  raw: SemanticScholarPaper,
+  raw: FoundPaper,
   requestedDoi: string,
 ): Paper {
   const authors = (raw.authors ?? [])
@@ -134,7 +135,7 @@ export function normalizeSemanticScholarPaper(
 
   return {
     doi: text(typeof doiFromApi === "string" ? doiFromApi : undefined)?.toLowerCase() ?? requestedDoi,
-    title: text(raw.title) ?? "Título no disponible",
+    title: raw.title.trim(),
     abstract: text(raw.abstract),
     year: count(raw.year),
     publicationDate: text(raw.publicationDate),

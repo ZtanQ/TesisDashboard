@@ -25,6 +25,11 @@ export function normalizeDoi(input: string): string | null {
   let value = input.trim();
   if (!value) return null;
 
+  // Se pega mucho desde citas: (doi: 10.x/y), "10.x/y", [10.x/y]. La
+  // puntuacion de apertura se quita antes de buscar el prefijo, para que
+  // "(doi:10.x/y)" tambien funcione.
+  value = value.replace(/^[("'\[<«"']+/, "");
+
   for (const prefix of RESOLVER_PREFIXES) {
     if (value.toLowerCase().startsWith(prefix)) {
       value = value.slice(prefix.length);
@@ -34,7 +39,7 @@ export function normalizeDoi(input: string): string | null {
 
   // Una URL de resolvedor puede traer query string o fragmento.
   value = value.split(/[?#]/)[0].trim();
-  value = value.replace(/[.,;)\]]+$/, "");
+  value = value.replace(/[.,;:)\]>»"']+$/, "");
 
   if (!DOI_PATTERN.test(value)) return null;
   return value.toLowerCase();

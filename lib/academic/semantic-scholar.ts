@@ -80,8 +80,15 @@ export type SemanticScholarError =
   | "rate-limited"
   | "unavailable";
 
+/**
+ * Un articulo utilizable: sin titulo no hay ficha que mostrar, asi que el
+ * cliente lo comprueba y el tipo lo garantiza a partir de aqui. De este modo
+ * el normalizador no necesita inventar un titulo de relleno.
+ */
+export type FoundPaper = SemanticScholarPaper & { title: string };
+
 export type SemanticScholarResult =
-  | { ok: true; paper: SemanticScholarPaper }
+  | { ok: true; paper: FoundPaper }
   | { ok: false; error: SemanticScholarError };
 
 /**
@@ -116,9 +123,11 @@ export async function fetchPaperByDoi(
 
   try {
     const paper = (await response.json()) as SemanticScholarPaper;
-    // Un 200 sin titulo no es un articulo utilizable.
-    if (!paper?.title) return { ok: false, error: "not-found" };
-    return { ok: true, paper };
+    // Un 200 sin titulo no es un articulo utilizable. Se comprueba con trim
+    // porque la API devuelve cadenas en blanco en algunos campos.
+    const title = paper?.title?.trim();
+    if (!title) return { ok: false, error: "not-found" };
+    return { ok: true, paper: { ...paper, title } };
   } catch {
     return { ok: false, error: "unavailable" };
   }
