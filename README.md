@@ -8,10 +8,10 @@ impacto — obtenidos de APIs académicas públicas.
 
 Aplicación web privada para el equipo de tesis (1–2 usuarios).
 
-> **Estado: fases 0–5 y 7–9 completadas.** Introduces un DOI, se consultan
+> **Estado: fases 0–5 y 7–10 completadas.** Introduces un DOI, se consultan
 > Semantic Scholar y OpenAlex en paralelo y se fusionan sus datos, puedes
 > guardar el resultado en tu biblioteca, subir el PDF, interpretarlo con IA y
-> comparar varios artículos entre sí.
+> comparar varios artículos entre sí y ver estadísticas de toda la biblioteca.
 > Analizar funciona sin base de datos y sin clave de IA: ambas son opcionales.
 > Las instituciones, los países y el cuartil aparecen como no disponibles
 > porque Semantic Scholar no los publica; los aportará OpenAlex.
@@ -28,9 +28,11 @@ Del MVP (fases 1–3):
   citas, referencias, tópicos, abstract y enlaces a las fuentes.
 - Manejo explícito de errores y de datos ausentes.
 
-Posteriores: biblioteca personal, OpenAlex y Crossref, métricas y cuartiles,
-análisis mediante IA, procesamiento de PDF, comparación de artículos y
-estadísticas del corpus.
+Ya implementados: biblioteca personal, OpenAlex, análisis mediante IA,
+procesamiento de PDF, comparación de artículos y estadísticas del corpus.
+
+Pendientes: métricas y cuartiles (ninguna fuente integrada los publica),
+Crossref, autenticación y despliegue.
 
 ## Architecture
 

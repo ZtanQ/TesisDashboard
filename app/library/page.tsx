@@ -52,9 +52,19 @@ export default async function LibraryPage() {
         ← Nuevo análisis
       </Link>
 
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-        Mis artículos
-      </h1>
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Mis artículos
+        </h1>
+        {entries.length > 0 ? (
+          <Link
+            href="/statistics"
+            className="text-sm text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-300"
+          >
+            Ver estadísticas →
+          </Link>
+        ) : null}
+      </div>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
         {entries.length === 0
           ? "Todavía no has guardado ninguno."

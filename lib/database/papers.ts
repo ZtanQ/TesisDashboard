@@ -469,6 +469,34 @@ export async function getSavedPapers(dois: string[]): Promise<DbResult<Paper[]>>
   };
 }
 
+/**
+ * Todos los articulos de la biblioteca, con sus relaciones, para estadisticas.
+ *
+ * Se agrega en memoria y no en SQL porque a esta escala (una biblioteca
+ * personal) la diferencia no se nota y la logica queda en un modulo puro que
+ * se puede probar. El tope evita que una biblioteca inesperadamente grande
+ * tumbe la pagina; si se alcanza, la interfaz lo dice.
+ */
+export const STATS_LIMIT = 500;
+
+export async function getAllSavedPapers(): Promise<DbResult<Paper[]>> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: "not-configured" };
+
+  const response = await withDeadline(
+    supabase
+      .from("papers")
+      .select(PAPER_SELECT)
+      .order("created_at", { ascending: false })
+      .limit(STATS_LIMIT),
+  );
+  if (timedOut(response)) return fail(TIMEOUT_DETAIL);
+  if (response.error) return fail(response.error.message);
+
+  const filas = (response.data ?? []) as unknown as PaperRow[];
+  return { ok: true, data: filas.map(rowToPaper) };
+}
+
 /** Quita un articulo de la biblioteca. Las uniones caen en cascada. */
 export async function deleteSavedPaper(doi: string): Promise<DbResult<null>> {
   const supabase = getSupabase();

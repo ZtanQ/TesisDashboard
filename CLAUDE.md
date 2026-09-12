@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-**Fases 0–5 y 7–9 completadas.** Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), y varios artículos guardados pueden compararse entre sí. La Fase 6 está bloqueada (ver abajo). La siguiente disponible es la 10 (estadísticas de la biblioteca).
+**Fases 0–5 y 7–10 completadas.** El roadmap del plan está cubierto salvo la fase 6 (bloqueada, ver abajo), la autenticación y el despliegue. Se introduce un DOI, se consultan Semantic Scholar y OpenAlex en paralelo, se fusionan, sale un dashboard que puede guardarse en una biblioteca persistente, el artículo puede interpretarse con IA (sobre el abstract o sobre el PDF completo si se sube), varios artículos guardados pueden compararse entre sí, y `/statistics` agrega la biblioteca completa. La Fase 6 está bloqueada (ver abajo).
 
 `Plan.md` es la fuente de verdad para alcance, modelo de datos y orden de fases. Ante cualquier duda de diseño, consultarlo antes de improvisar.
 
@@ -21,6 +21,15 @@ Opciones, ninguna elegida todavía:
 - **No hacerlo** y dejar el cuartil como no disponible de forma permanente, quitando la tarjeta.
 
 Hasta que se decida, la tarjeta de cuartil muestra "Ninguna fuente lo publica", que es correcto pero permanente. **No inventar un cuartil calculándolo a partir de las citas**: el plan (§19) lo prohíbe explícitamente, y sería convertir una estimación en una falsa métrica.
+
+### Estadísticas: dos decisiones de gráfico
+
+`lib/statistics.ts` agrega en memoria, no en SQL: a la escala de una biblioteca personal la diferencia no se nota y la lógica queda en un módulo puro que se puede probar. Tope de 500 artículos, y la página lo dice si se alcanza.
+
+- **Los años sin artículos se muestran igualmente.** Omitirlos comprime el eje: con artículos de 1997, 2015 y 2019, sin los huecos parecerían consecutivos. Hay test.
+- **La serie por año va en columnas sobre un eje horizontal, no en barras horizontales.** La primera versión usaba la lista de barras y una biblioteca de 23 años eran 23 filas, 20 de ellas vacías: el patrón se perdía en el ruido. Las columnas son la forma correcta para el tiempo.
+- **El recuento de autores es aproximado** y la interfaz lo dice: se agrupan por identificador de fuente cuando lo hay y por nombre cuando no, así que "A. Ruiz" y "Ana Ruiz" pueden contar por separado.
+- **Los cuartiles muestran siempre Q1–Q4 y «sin dato».** Hoy todo cae en «sin dato» y la página explica por qué; un gráfico que ocultara la categoría vacía haría parecer que el dato existe.
 
 ### Comparación: qué compara y qué no
 
