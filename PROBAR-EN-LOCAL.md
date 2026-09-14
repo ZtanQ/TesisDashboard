@@ -88,7 +88,7 @@ cp .env.example .env.local
 ```
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54621
 SUPABASE_SERVICE_ROLE_KEY=<el SERVICE_ROLE_KEY que imprimió el comando>
 ```
 
@@ -96,6 +96,14 @@ Reinicia `npm run dev`. Ahora el dashboard muestra **Guardar en la biblioteca**,
 y se activan `/library`, `/compare` y `/statistics`.
 
 Para apagarla: `npx supabase stop` (los datos se conservan).
+
+En Windows puede fallar con «ports are not available: ... An attempt was made
+to access a socket in a way forbidden by its access permissions»: Hyper-V
+reserva rangos de puertos al azar al arrancar y a veces se queda con el
+54300–54399, donde caen los puertos por defecto de Supabase. Por eso
+`supabase/config.toml` los tiene movidos al rango 5462x, que está libre.
+Comprobar los rangos reservados: `netsh interface ipv4 show excludedportrange
+protocol=tcp`.
 
 ---
 
